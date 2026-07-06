@@ -4,8 +4,8 @@ services:
     container_name: nexus-postgres
 
     environment:
-      POSTGRES_USER: nexus_user
-      POSTGRES_PASSWORD: nexus@123
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: nexus
 
     ports:
