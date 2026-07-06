@@ -12,7 +12,7 @@ Completed milestones:
 - [x] ADR documentation
 
 Current work:
-- [ ] Database schema design
+- [x] Database schema design
 
 Next milestone:
 - [ ] Authentication implementation, followed by collaborative canvas integration
