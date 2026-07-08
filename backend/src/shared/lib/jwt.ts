@@ -3,28 +3,61 @@ import type { StringValue } from "ms";
 
 import { env } from "../../config/env.js";
 
-export type AccessTokenPayload = {
+export type TokenPayload = {
     userId: string;
+    email: string;
 };
 
-const isAccessTokenPayload = (
+export type AccessTokenPayload = TokenPayload;
+
+export type RefreshTokenPayload = TokenPayload;
+
+const isTokenPayload = (
     payload: jwt.JwtPayload | string,
-): payload is jwt.JwtPayload & AccessTokenPayload => {
-    return typeof payload === "object" && payload !== null && typeof payload.userId === "string";
+): payload is jwt.JwtPayload & TokenPayload => {
+    return (
+        typeof payload === "object"
+        && payload !== null
+        && typeof payload.userId === "string"
+        && typeof payload.email === "string"
+    );
 };
 
-export const generateAccessToken = (userId: string): string => {
-    return jwt.sign({ userId }, env.JWT_ACCESS_SECRET, {
-        expiresIn: env.JWT_ACCESS_EXPIRES_IN as StringValue,
+const signToken = (
+    payload: TokenPayload,
+    secret: string,
+    expiresIn: string,
+): string => {
+    return jwt.sign(payload, secret, {
+        expiresIn: expiresIn as StringValue,
     });
 };
 
-export const verifyAccessToken = (token: string): AccessTokenPayload => {
-    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET);
+const verifyToken = (token: string, secret: string): TokenPayload => {
+    const payload = jwt.verify(token, secret);
 
-    if (!isAccessTokenPayload(payload)) {
-        throw new Error("Invalid access token payload");
+    if (!isTokenPayload(payload)) {
+        throw new Error("Invalid token payload");
     }
 
-    return { userId: payload.userId };
+    return {
+        userId: payload.userId,
+        email: payload.email,
+    };
+};
+
+export const generateAccessToken = (payload: TokenPayload): string => {
+    return signToken(payload, env.JWT_ACCESS_SECRET, env.JWT_ACCESS_EXPIRES_IN);
+};
+
+export const verifyAccessToken = (token: string): TokenPayload => {
+    return verifyToken(token, env.JWT_ACCESS_SECRET);
+};
+
+export const generateRefreshToken = (payload: TokenPayload): string => {
+    return signToken(payload, env.JWT_REFRESH_SECRET, env.JWT_REFRESH_EXPIRES_IN);
+};
+
+export const verifyRefreshToken = (token: string): TokenPayload => {
+    return verifyToken(token, env.JWT_REFRESH_SECRET);
 };

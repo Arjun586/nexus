@@ -10,12 +10,13 @@ Completed milestones:
 - [x] Project setup
 - [x] Architecture design
 - [x] ADR documentation
+- [x] Authentication (registration, login, JWT access/refresh tokens, HTTP-only cookies, logout, protected routes)
 
 Current work:
-- [x] Database schema design
+- [ ] Authentication UI
 
 Next milestone:
-- [ ] Authentication implementation, followed by collaborative canvas integration
+- [ ] Workspace Management
 
 ## Why Nexus?
 
@@ -82,12 +83,17 @@ Yjs holds the live collaborative state as the single source of truth. PostgreSQL
 - Hocuspocus (WebSocket server for Yjs)
 
 **Backend**
-- Node.js + Express
+- Node.js
+- Express
+- TypeScript
 - PostgreSQL
 - Prisma (ORM)
 - Redis
 - Docker (local environment orchestration)
 - Zod (runtime schema validation)
+- Argon2 (password hashing)
+- JSON Web Token (JWT)
+- Cookie Parser
 
 ### Planned Infrastructure
 
@@ -134,6 +140,59 @@ Nexus uses a two-folder structure to separate frontend and backend concerns with
 - **Orchestration:** Docker runs local instances of PostgreSQL and Redis to keep dev and production environments consistent.
 - **Validation:** Zod enforces schema validation across frontend, backend, and WebSocket payloads.
 
+## Authentication
+
+Authentication is fully implemented and tested on the backend.
+
+Implemented features:
+- User registration
+- User login
+- Argon2 password hashing
+- Access tokens
+- Refresh tokens
+- Refresh token persistence (hashed)
+- HTTP-only cookies
+- Logout
+- Protected routes (auth middleware)
+
+**Flow:**
+
+```
+Register/Login
+    ↓
+Argon2 verifies credentials
+    ↓
+Access Token (short-lived) + Refresh Token (persisted, hashed)
+    ↓
+HTTP-only Cookies set
+    ↓
+Protected Route Middleware validates Access Token
+    ↓
+Refresh Endpoint issues new Access Token when expired
+    ↓
+Logout revokes Refresh Token
+```
+
+## Current Backend Architecture
+
+```
+Request
+    ↓
+Route
+    ↓
+Validation Middleware
+    ↓
+Controller
+    ↓
+Service
+    ↓
+Repository
+    ↓
+Prisma
+    ↓
+PostgreSQL
+```
+
 ## Implementation Roadmap
 
 ### Phase 1 — Collaborative Canvas (MVP)
@@ -144,6 +203,12 @@ Goal: Build the smallest deployable collaborative editor.
 - [x] Initialize backend (Node.js + Express + TypeScript)
 - [x] Configure PostgreSQL using Docker
 - [x] Configure Prisma
+- [x] Authentication (registration, login, password hashing)
+- [x] JWT (access token generation)
+- [x] Refresh Tokens (persistence, refresh endpoint)
+- [x] Protected Routes (auth middleware)
+- [ ] Authentication UI (Pending)
+- [ ] Workspace CRUD (Pending)
 - [ ] Create shared Zod schemas
 - [ ] Integrate React Flow
 - [ ] Local node creation
@@ -153,7 +218,6 @@ Goal: Build the smallest deployable collaborative editor.
 - [ ] Integrate Yjs
 - [ ] Synchronize canvas between multiple users
 - [ ] Save and load workspaces from PostgreSQL
-- [ ] Basic authentication
 - [ ] Deploy MVP
 
 ### Phase 2 — Collaboration Experience
@@ -197,8 +261,8 @@ Goal: Introduce enterprise-level functionality.
 The first release includes only the features required to demonstrate a working collaborative editing engine.
 
 **Included**
-- User authentication
-- Workspace creation
+- User authentication (implemented)
+- Workspace creation (next feature)
 - Shared canvas
 - Real-time synchronization
 - Persistent storage

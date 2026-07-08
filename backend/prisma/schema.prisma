@@ -22,10 +22,10 @@ model User {
 model RefreshToken {
   id String @id @default(uuid()) @db.Uuid
 
-  tokenHash String
-  isRevoked Boolean @default(false)
+  tokenHash String @unique
 
   expiresAt DateTime
+  revokedAt DateTime?
 
   createdAt DateTime @default(now())
 
