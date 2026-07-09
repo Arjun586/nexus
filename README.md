@@ -12,12 +12,11 @@ Completed milestones:
 - [x] ADR documentation
 - [x] Authentication (registration, login, JWT access/refresh tokens, HTTP-only cookies, logout, protected routes)
 - [x] Authentication UI
+- [X] Workspace UI
 
 Current work:
-- [ ] Workspace UI
-
-Next milestone:
 - [ ] Canvas
+
 
 ## Why Nexus?
 
@@ -209,8 +208,8 @@ Goal: Build the smallest deployable collaborative editor.
 - [x] Refresh Tokens (persistence, refresh endpoint)
 - [x] Protected Routes (auth middleware)
 - [x] Authentication UI (Pending)
-- [ ] Workspace CRUD (Pending)
-- [ ] Create shared Zod schemas
+- [x] Workspace CRUD (Pending)
+- [x] Create shared Zod schemas
 - [ ] Integrate React Flow
 - [ ] Local node creation
 - [ ] Local node editing

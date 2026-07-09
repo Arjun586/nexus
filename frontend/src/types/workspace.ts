@@ -19,3 +19,8 @@ export type GetWorkspacesResponse = {
   success: true;
   data: Workspace[];
 };
+
+export type GetWorkspaceResponse = {
+  success: true;
+  data: Workspace;
+};
