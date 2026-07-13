@@ -1,6 +1,6 @@
 # Nexus: Distributed State Synchronization Engine
 
-Nexus is a real-time collaborative node-based workspace built to explore distributed state synchronization using modern web technologies. It allows multiple users to create, drag, and edit objects on a shared canvas simultaneously. The project is under active development, with a focus on distributed state management to keep clients in sync without data conflicts, even under network latency.
+Nexus is a real-time collaborative infinite whiteboard built to explore distributed state synchronization using modern web technologies. It allows multiple users to draw, create, and edit shapes on a shared infinite canvas simultaneously. The project is under active development, with a focus on distributed state management to keep clients in sync without data conflicts, even under network latency.
 
 ## Project Status
 
@@ -32,9 +32,9 @@ This project is a hands-on exploration of:
 
 Nexus is built to explore the challenges of real-time collaborative software. The MVP focuses on three core problems:
 
-- **Real-time collaboration:** Multiple users editing the same workspace simultaneously.
+- **Real-time collaboration:** Multiple users drawing and editing on the same whiteboard simultaneously.
 - **Conflict resolution:** Concurrent edits stay consistent across all connected clients using CRDTs.
-- **Responsive experience:** The canvas remains interactive while synchronizing changes in real time.
+- **Responsive experience:** The infinite canvas remains interactive while synchronizing changes in real time.
 
 Later phases will address scaling, presence systems, background processing, and distributed infrastructure.
 
@@ -42,7 +42,7 @@ Later phases will address scaling, presence systems, background processing, and 
 
 The goal of Nexus is not to replicate every feature of Figma or Miro. The project follows an iterative approach:
 
-1. Build a minimal collaborative editor.
+1. Build a minimal collaborative whiteboard.
 2. Ship a working MVP.
 3. Improve collaboration features.
 4. Optimize for scale.
@@ -75,7 +75,7 @@ Yjs holds the live collaborative state as the single source of truth. PostgreSQL
 **Frontend**
 - Vite
 - React + TypeScript
-- React Flow (canvas rendering, zoom/pan/drag)
+- tldraw (infinite canvas rendering, drawing, shapes, zoom/pan/drag)
 - Tailwind CSS
 
 **Sync Layer**
@@ -195,9 +195,9 @@ PostgreSQL
 
 ## Implementation Roadmap
 
-### Phase 1 — Collaborative Canvas (MVP)
+### Phase 1 — Collaborative Whiteboard (MVP)
 
-Goal: Build the smallest deployable collaborative editor.
+Goal: Build the smallest deployable collaborative whiteboard.
 
 - [x] Initialize frontend (Vite + React + TypeScript)
 - [x] Initialize backend (Node.js + Express + TypeScript)
@@ -210,13 +210,13 @@ Goal: Build the smallest deployable collaborative editor.
 - [x] Authentication UI (Pending)
 - [x] Workspace CRUD (Pending)
 - [x] Create shared Zod schemas
-- [ ] Integrate React Flow
-- [ ] Local node creation
-- [ ] Local node editing
-- [ ] Local node dragging
+- [ ] Integrate tldraw
+- [ ] Local shape creation (drawing, sticky notes, text, basic shapes)
+- [ ] Local shape editing
+- [ ] Local shape dragging and positioning on the infinite canvas
 - [ ] Integrate Hocuspocus
 - [ ] Integrate Yjs
-- [ ] Synchronize canvas between multiple users
+- [ ] Synchronize whiteboard between multiple users
 - [ ] Save and load workspaces from PostgreSQL
 - [ ] Deploy MVP
 
@@ -258,12 +258,13 @@ Goal: Introduce enterprise-level functionality.
 
 ## MVP Scope
 
-The first release includes only the features required to demonstrate a working collaborative editing engine.
+The first release includes only the features required to demonstrate a working collaborative whiteboard engine.
 
 **Included**
 - User authentication (implemented)
 - Workspace creation (next feature)
-- Shared canvas
+- Shared infinite canvas
+- Drawing and shape creation
 - Real-time synchronization
 - Persistent storage
 - Multi-user editing
