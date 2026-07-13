@@ -10,6 +10,13 @@ export type Workspace = {
   updatedAt: string;
 };
 
+/** tldraw TLEditorSnapshot as a plain JSON object */
+export type WorkspaceSnapshotPayload = Record<string, unknown>;
+
+export type WorkspaceSnapshotData = {
+  snapshot: WorkspaceSnapshotPayload | null;
+};
+
 export type CreateWorkspaceResponse = {
   success: true;
   data: Workspace;
@@ -23,4 +30,14 @@ export type GetWorkspacesResponse = {
 export type GetWorkspaceResponse = {
   success: true;
   data: Workspace;
+};
+
+export type GetWorkspaceSnapshotResponse = {
+  success: true;
+  data: WorkspaceSnapshotData;
+};
+
+export type SaveWorkspaceSnapshotResponse = {
+  success: true;
+  data: WorkspaceSnapshotData;
 };

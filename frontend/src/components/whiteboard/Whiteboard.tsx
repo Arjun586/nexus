@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
   getSnapshot,
   loadSnapshot,
@@ -8,53 +9,93 @@ import {
 } from "tldraw";
 import "tldraw/tldraw.css";
 
+import {
+  getWorkspaceSnapshot,
+  saveWorkspaceSnapshot,
+} from "../../api/workspace";
+import { parseApiError } from "../../utils/parse-api-error";
 import useAppColorScheme from "./use-app-color-scheme";
 
 const Whiteboard = () => {
+  const { workspaceId } = useParams<{ workspaceId: string }>();
   const colorScheme = useAppColorScheme();
   const editorRef = useRef<Editor | null>(null);
-  const [exportedSnapshot, setExportedSnapshot] =
-    useState<TLEditorSnapshot | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingSnapshot, setIsLoadingSnapshot] = useState(true);
 
-  const handleMount = useCallback((editor: Editor) => {
-    editorRef.current = editor;
-  }, []);
+  const handleMount = useCallback(
+    (editor: Editor) => {
+      editorRef.current = editor;
 
-  const handleExport = () => {
+      if (!workspaceId) {
+        setIsLoadingSnapshot(false);
+        setStatus("Workspace not found");
+        return;
+      }
+
+      let cancelled = false;
+
+      const loadSavedSnapshot = async () => {
+        setIsLoadingSnapshot(true);
+
+        try {
+          const response = await getWorkspaceSnapshot(workspaceId);
+
+          if (cancelled) return;
+
+          const { snapshot } = response.data;
+
+          if (snapshot) {
+            loadSnapshot(editor.store, snapshot as unknown as TLEditorSnapshot);
+            setStatus("Loaded saved snapshot");
+          } else {
+            setStatus("Empty whiteboard");
+          }
+        } catch (err) {
+          if (!cancelled) {
+            const { message } = parseApiError(err);
+            setStatus(message);
+          }
+        } finally {
+          if (!cancelled) {
+            setIsLoadingSnapshot(false);
+          }
+        }
+      };
+
+      void loadSavedSnapshot();
+
+      return () => {
+        cancelled = true;
+      };
+    },
+    [workspaceId],
+  );
+
+  const handleSave = async () => {
     const editor = editorRef.current;
-    if (!editor) return;
 
-    // JSON round-trip mirrors future persistence and freezes an immutable copy.
-    const snapshot = JSON.parse(
-      JSON.stringify(getSnapshot(editor.store)),
-    ) as TLEditorSnapshot;
+    if (!editor || !workspaceId || isSaving) return;
 
+    setIsSaving(true);
 
-    console.log("snapshot", snapshot);
+    try {
+      const snapshot = JSON.parse(
+        JSON.stringify(getSnapshot(editor.store)),
+      ) as TLEditorSnapshot;
 
-    setExportedSnapshot(snapshot);
-    setStatus("Exported current document to memory");
-  };
-
-  const handleClear = () => {
-    const editor = editorRef.current;
-    if (!editor) return;
-
-    const shapeIds = [...editor.getCurrentPageShapeIds()];
-    if (shapeIds.length > 0) {
-      editor.deleteShapes(shapeIds);
+      await saveWorkspaceSnapshot(
+        workspaceId,
+        snapshot as unknown as Record<string, unknown>,
+      );
+      setStatus("Snapshot saved");
+    } catch (err) {
+      const { message } = parseApiError(err);
+      setStatus(message);
+    } finally {
+      setIsSaving(false);
     }
-
-    setStatus("Cleared current page shapes");
-  };
-
-  const handleImport = () => {
-    const editor = editorRef.current;
-    if (!editor || !exportedSnapshot) return;
-
-    loadSnapshot(editor.store, exportedSnapshot);
-    setStatus("Imported last exported document");
   };
 
   return (
@@ -66,25 +107,13 @@ const Whiteboard = () => {
         <div className="pointer-events-auto flex flex-wrap justify-end gap-2">
           <button
             type="button"
-            onClick={handleExport}
-            className="rounded border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-800 shadow-sm hover:bg-gray-50"
-          >
-            Export
-          </button>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="rounded border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-800 shadow-sm hover:bg-gray-50"
-          >
-            Clear
-          </button>
-          <button
-            type="button"
-            onClick={handleImport}
-            disabled={!exportedSnapshot}
+            onClick={() => {
+              void handleSave();
+            }}
+            disabled={!workspaceId || isSaving || isLoadingSnapshot}
             className="rounded border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Import
+            {isSaving ? "Saving…" : "Save"}
           </button>
         </div>
         {status ? (

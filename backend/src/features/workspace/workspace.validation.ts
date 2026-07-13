@@ -7,3 +7,7 @@ export const createWorkspaceSchema = z.object({
         .min(1)
         .max(100),
 });
+
+export const saveSnapshotSchema = z.object({
+    snapshot: z.object({}).passthrough(),
+});

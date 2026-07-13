@@ -3,7 +3,10 @@ import type {
   CreateWorkspaceInput,
   CreateWorkspaceResponse,
   GetWorkspaceResponse,
+  GetWorkspaceSnapshotResponse,
   GetWorkspacesResponse,
+  SaveWorkspaceSnapshotResponse,
+  WorkspaceSnapshotPayload,
 } from "../types/workspace";
 import apiClient from "./axios";
 
@@ -13,6 +16,9 @@ const WORKSPACE_ENDPOINTS = {
 
 const workspaceById = (workspaceId: string) =>
   `${WORKSPACE_ENDPOINTS.workspaces}/${workspaceId}`;
+
+const workspaceSnapshotById = (workspaceId: string) =>
+  `${workspaceById(workspaceId)}/snapshot`;
 
 const getAuthHeaders = () => {
   const accessToken = getAccessToken();
@@ -52,6 +58,30 @@ export async function getWorkspace(
 ): Promise<GetWorkspaceResponse> {
   const { data } = await apiClient.get<GetWorkspaceResponse>(
     workspaceById(workspaceId),
+    getAuthHeaders(),
+  );
+
+  return data;
+}
+
+export async function getWorkspaceSnapshot(
+  workspaceId: string,
+): Promise<GetWorkspaceSnapshotResponse> {
+  const { data } = await apiClient.get<GetWorkspaceSnapshotResponse>(
+    workspaceSnapshotById(workspaceId),
+    getAuthHeaders(),
+  );
+
+  return data;
+}
+
+export async function saveWorkspaceSnapshot(
+  workspaceId: string,
+  snapshot: WorkspaceSnapshotPayload,
+): Promise<SaveWorkspaceSnapshotResponse> {
+  const { data } = await apiClient.put<SaveWorkspaceSnapshotResponse>(
+    workspaceSnapshotById(workspaceId),
+    { snapshot },
     getAuthHeaders(),
   );
 

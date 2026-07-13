@@ -1,6 +1,13 @@
+import type { Prisma } from "@prisma/client";
+
 import { ApiError } from "../../shared/errors/api-error.js";
 import { workspaceRepository } from "./workspace.repository.js";
-import type { CreateWorkspaceInput, Workspace } from "./workspace.types.js";
+import type {
+    CreateWorkspaceInput,
+    SaveSnapshotInput,
+    Workspace,
+    WorkspaceSnapshot,
+} from "./workspace.types.js";
 
 const createWorkspace = async (
     ownerId: string,
@@ -32,8 +39,41 @@ const getWorkspaceById = async (
     return workspace;
 };
 
+const getSnapshot = async (
+    ownerId: string,
+    workspaceId: string,
+): Promise<WorkspaceSnapshot> => {
+    const result = await workspaceRepository.getSnapshot(workspaceId, ownerId);
+
+    if (!result) {
+        throw new ApiError(404, "Workspace not found");
+    }
+
+    return { snapshot: result.snapshot };
+};
+
+const saveSnapshot = async (
+    ownerId: string,
+    workspaceId: string,
+    input: SaveSnapshotInput,
+): Promise<WorkspaceSnapshot> => {
+    const result = await workspaceRepository.saveSnapshot(
+        workspaceId,
+        ownerId,
+        input.snapshot as Prisma.InputJsonValue,
+    );
+
+    if (!result) {
+        throw new ApiError(404, "Workspace not found");
+    }
+
+    return { snapshot: result.snapshot };
+};
+
 export const workspaceService = {
     createWorkspace,
     getWorkspaces,
     getWorkspaceById,
+    getSnapshot,
+    saveSnapshot,
 };
