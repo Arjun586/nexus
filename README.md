@@ -1,6 +1,6 @@
 # Nexus: Distributed State Synchronization Engine
 
-Nexus is a real-time collaborative infinite whiteboard built to explore distributed state synchronization using modern web technologies. It allows multiple users to draw, create, and edit shapes on a shared infinite canvas simultaneously. The project is under active development, with a focus on distributed state management to keep clients in sync without data conflicts, even under network latency.
+Nexus is a distributed state synchronization engine that powers a real-time collaborative infinite whiteboard. It allows multiple users to draw, create, and edit shapes on a shared infinite canvas simultaneously. The project is under active development, with a focus on distributed state management to keep clients in sync without data conflicts, even under network latency.
 
 ## Project Status
 
@@ -12,7 +12,7 @@ Completed milestones:
 - [x] ADR documentation
 - [x] Authentication (registration, login, JWT access/refresh tokens, HTTP-only cookies, logout, protected routes)
 - [x] Authentication UI
-- [X] Workspace UI
+- [x] Workspace UI
 
 Current work:
 - [ ] Canvas
@@ -210,10 +210,10 @@ Goal: Build the smallest deployable collaborative whiteboard.
 - [x] Authentication UI (Pending)
 - [x] Workspace CRUD (Pending)
 - [x] Create shared Zod schemas
-- [ ] Integrate tldraw
-- [ ] Local shape creation (drawing, sticky notes, text, basic shapes)
-- [ ] Local shape editing
-- [ ] Local shape dragging and positioning on the infinite canvas
+- [x] Integrate tldraw
+- [x] Local shape creation (drawing, sticky notes, text, basic shapes)
+- [x] Local shape editing
+- [x] Local shape dragging and positioning on the infinite canvas
 - [ ] Integrate Hocuspocus
 - [ ] Integrate Yjs
 - [ ] Synchronize whiteboard between multiple users

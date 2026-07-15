@@ -1,11 +1,12 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import type { Workspace } from "../types/workspace";
 
 import { logout } from "../api/auth";
-import { createWorkspace, getWorkspaces } from "../api/workspace";
+import { createWorkspace, deleteWorkspace, getWorkspaces } from "../api/workspace";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { clearSession } from "../session/restore-session";
 import { getUser } from "../session/user";
-import type { Workspace } from "../types/workspace";
 import { parseApiError } from "../utils/parse-api-error";
 
 const validateWorkspaceName = (name: string): string | undefined => {
@@ -35,6 +36,9 @@ const AppLayout = () => {
   const [createError, setCreateError] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Workspace | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const loadWorkspaces = async () => {
     setIsLoadingWorkspaces(true);
@@ -88,6 +92,25 @@ const AppLayout = () => {
     }
   };
 
+  const handleDeleteWorkspace = async () => {
+    if (!deleteTarget || isDeleting) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      await deleteWorkspace(deleteTarget.id);
+      setWorkspaces((prev) => prev.filter((w) => w.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      navigate("/dashboard");
+    } catch (error) {
+      const { message } = parseApiError(error);
+      setDeleteError(message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     setLogoutError(null);
@@ -103,6 +126,15 @@ const AppLayout = () => {
       setIsLoggingOut(false);
     }
   };
+
+  const onWorkspaceRenamed = useCallback(
+    (updated: Workspace) => {
+      setWorkspaces((prev) =>
+        prev.map((w) => (w.id === updated.id ? { ...w, name: updated.name } : w)),
+      );
+    },
+    [],
+  );
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -211,12 +243,12 @@ const AppLayout = () => {
             ) : (
               <ul className="space-y-1">
                 {workspaces.map((workspace) => (
-                  <li key={workspace.id}>
+                  <li key={workspace.id} className="group flex items-center">
                     <NavLink
                       to={`/workspaces/${workspace.id}`}
                       className={({ isActive }) =>
                         [
-                          "block rounded-md px-2 py-1.5 text-sm truncate",
+                          "block min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm truncate",
                           isActive
                             ? "bg-gray-100 font-medium text-gray-900"
                             : "text-gray-700 hover:bg-gray-50",
@@ -225,6 +257,28 @@ const AppLayout = () => {
                     >
                       {workspace.name}
                     </NavLink>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteTarget(workspace);
+                        setDeleteError(null);
+                      }}
+                      aria-label={`Delete ${workspace.name}`}
+                      className="mr-1 shrink-0 rounded p-1 text-gray-400 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="h-3.5 w-3.5"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.519.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -263,8 +317,24 @@ const AppLayout = () => {
       </aside>
 
       <main className="min-w-0 flex-1 overflow-auto">
-        <Outlet />
+        <Outlet context={{ onWorkspaceRenamed }} />
       </main>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete Workspace?"
+        message="This action cannot be undone. All whiteboard data inside this workspace will be permanently deleted."
+        confirmLabel="Delete Workspace"
+        isLoading={isDeleting}
+        error={deleteError}
+        onConfirm={() => void handleDeleteWorkspace()}
+        onCancel={() => {
+          if (!isDeleting) {
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }
+        }}
+      />
     </div>
   );
 };

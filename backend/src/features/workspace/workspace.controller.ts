@@ -89,10 +89,45 @@ const saveSnapshot = asyncHandler(async (req: Request, res: Response): Promise<v
     });
 });
 
+const renameWorkspace = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const workspace = await workspaceService.renameWorkspace(
+        req.user.userId,
+        requireWorkspaceId(req),
+        req.body,
+    );
+
+    res.status(200).json({
+        success: true,
+        data: workspace,
+    });
+});
+
+const deleteWorkspace = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    await workspaceService.deleteWorkspace(
+        req.user.userId,
+        requireWorkspaceId(req),
+    );
+
+    res.status(200).json({
+        success: true,
+        message: "Workspace deleted successfully",
+    });
+});
+
 export const workspaceController = {
     createWorkspace,
     getWorkspaces,
     getWorkspaceById,
     getSnapshot,
     saveSnapshot,
+    renameWorkspace,
+    deleteWorkspace,
 };

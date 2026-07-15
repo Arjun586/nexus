@@ -2,9 +2,12 @@ import { getAccessToken } from "../session/access-token";
 import type {
   CreateWorkspaceInput,
   CreateWorkspaceResponse,
+  DeleteWorkspaceResponse,
   GetWorkspaceResponse,
   GetWorkspaceSnapshotResponse,
   GetWorkspacesResponse,
+  RenameWorkspaceInput,
+  RenameWorkspaceResponse,
   SaveWorkspaceSnapshotResponse,
   WorkspaceSnapshotPayload,
 } from "../types/workspace";
@@ -82,6 +85,30 @@ export async function saveWorkspaceSnapshot(
   const { data } = await apiClient.put<SaveWorkspaceSnapshotResponse>(
     workspaceSnapshotById(workspaceId),
     { snapshot },
+    getAuthHeaders(),
+  );
+
+  return data;
+}
+
+export async function renameWorkspace(
+  workspaceId: string,
+  input: RenameWorkspaceInput,
+): Promise<RenameWorkspaceResponse> {
+  const { data } = await apiClient.patch<RenameWorkspaceResponse>(
+    workspaceById(workspaceId),
+    input,
+    getAuthHeaders(),
+  );
+
+  return data;
+}
+
+export async function deleteWorkspace(
+  workspaceId: string,
+): Promise<DeleteWorkspaceResponse> {
+  const { data } = await apiClient.delete<DeleteWorkspaceResponse>(
+    workspaceById(workspaceId),
     getAuthHeaders(),
   );
 

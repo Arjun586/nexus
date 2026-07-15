@@ -54,6 +54,7 @@ export const verifyAccessToken = (token: string): TokenPayload => {
     return verifyToken(token, env.JWT_ACCESS_SECRET);
 };
 
+
 export const generateRefreshToken = (payload: TokenPayload): string => {
     return signToken(payload, env.JWT_REFRESH_SECRET, env.JWT_REFRESH_EXPIRES_IN);
 };

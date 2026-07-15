@@ -4,6 +4,7 @@ import { ApiError } from "../../shared/errors/api-error.js";
 import { workspaceRepository } from "./workspace.repository.js";
 import type {
     CreateWorkspaceInput,
+    RenameWorkspaceInput,
     SaveSnapshotInput,
     Workspace,
     WorkspaceSnapshot,
@@ -70,10 +71,44 @@ const saveSnapshot = async (
     return { snapshot: result.snapshot };
 };
 
+const renameWorkspace = async (
+    ownerId: string,
+    workspaceId: string,
+    input: RenameWorkspaceInput,
+): Promise<Workspace> => {
+    const result = await workspaceRepository.renameWorkspace(
+        workspaceId,
+        ownerId,
+        input.name,
+    );
+
+    if (!result) {
+        throw new ApiError(404, "Workspace not found");
+    }
+
+    return result;
+};
+
+const deleteWorkspace = async (
+    ownerId: string,
+    workspaceId: string,
+): Promise<void> => {
+    const deleted = await workspaceRepository.deleteWorkspace(
+        workspaceId,
+        ownerId,
+    );
+
+    if (!deleted) {
+        throw new ApiError(404, "Workspace not found");
+    }
+};
+
 export const workspaceService = {
     createWorkspace,
     getWorkspaces,
     getWorkspaceById,
     getSnapshot,
     saveSnapshot,
+    renameWorkspace,
+    deleteWorkspace,
 };

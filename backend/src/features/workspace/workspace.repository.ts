@@ -79,12 +79,49 @@ const saveSnapshot = async (
     });
 };
 
+const renameWorkspace = async (
+    workspaceId: string,
+    ownerId: string,
+    name: string,
+): Promise<WorkspaceMetadata | null> => {
+    const owned = await findWorkspaceByIdAndOwnerId(workspaceId, ownerId);
+
+    if (!owned) {
+        return null;
+    }
+
+    return prisma.workspace.update({
+        where: { id: workspaceId },
+        data: { name },
+        select: workspaceMetadataSelect,
+    });
+};
+
+const deleteWorkspace = async (
+    workspaceId: string,
+    ownerId: string,
+): Promise<boolean> => {
+    const owned = await findWorkspaceByIdAndOwnerId(workspaceId, ownerId);
+
+    if (!owned) {
+        return false;
+    }
+
+    await prisma.workspace.delete({
+        where: { id: workspaceId },
+    });
+
+    return true;
+};
+
 export const workspaceRepository = {
     createWorkspace,
     findWorkspacesByOwnerId,
     findWorkspaceByIdAndOwnerId,
     getSnapshot,
     saveSnapshot,
+    renameWorkspace,
+    deleteWorkspace,
 };
 
 export type { WorkspaceMetadata };

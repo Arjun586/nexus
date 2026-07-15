@@ -2,6 +2,10 @@ export type CreateWorkspaceInput = {
   name: string;
 };
 
+export type RenameWorkspaceInput = {
+  name: string;
+};
+
 export type Workspace = {
   id: string;
   name: string;
@@ -18,6 +22,11 @@ export type WorkspaceSnapshotData = {
 };
 
 export type CreateWorkspaceResponse = {
+  success: true;
+  data: Workspace;
+};
+
+export type RenameWorkspaceResponse = {
   success: true;
   data: Workspace;
 };
@@ -40,4 +49,9 @@ export type GetWorkspaceSnapshotResponse = {
 export type SaveWorkspaceSnapshotResponse = {
   success: true;
   data: WorkspaceSnapshotData;
+};
+
+export type DeleteWorkspaceResponse = {
+  success: true;
+  message: string;
 };

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   getSnapshot,
@@ -16,13 +16,116 @@ import {
 import { parseApiError } from "../../utils/parse-api-error";
 import useAppColorScheme from "./use-app-color-scheme";
 
+
+type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+
+const DEBOUNCE_MS = 2_000;
+const MAX_INTERVAL_MS = 30_000;
+
 const Whiteboard = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const colorScheme = useAppColorScheme();
+
+  // Refs — mutated directly to avoid re-renders inside timers/listeners.
   const editorRef = useRef<Editor | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const dirtyRef = useRef(false);
+  const isSavingRef = useRef(false);
+  const isLoadingSnapshotRef = useRef(true);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Rendered state — only what the UI actually needs.
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [isLoadingSnapshot, setIsLoadingSnapshot] = useState(true);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [now, setNow] = useState<Date>(new Date());
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Keep the ref in sync with state so timers see the latest value without
+  // being added to dependency arrays.
+  useEffect(() => {
+    isLoadingSnapshotRef.current = isLoadingSnapshot;
+  }, [isLoadingSnapshot]);
+
+
+  const saveIfNeeded = useCallback(async () => {
+    const editor = editorRef.current;
+
+    // Guard: skip if any pre-condition is not met.
+    if (
+      !editor ||
+      !workspaceId ||
+      isSavingRef.current ||
+      !dirtyRef.current
+    ) {
+      return;
+    }
+
+    isSavingRef.current = true;
+    dirtyRef.current = false;
+    setSaveStatus("saving");
+
+    try {
+      const snapshot = JSON.parse(
+        JSON.stringify(getSnapshot(editor.store)),
+      ) as TLEditorSnapshot;
+
+      await saveWorkspaceSnapshot(
+        workspaceId,
+        snapshot as unknown as Record<string, unknown>,
+      );
+
+      setSaveStatus("saved");
+      setLastSavedAt(new Date());
+    } catch (err) {
+      // Re-mark dirty so the next timer tick retries.
+      dirtyRef.current = true;
+      const { message } = parseApiError(err);
+      console.error("[Autosave] Failed:", message);
+      setSaveStatus("error");
+    } finally {
+      isSavingRef.current = false;
+    }
+  }, [workspaceId]);
+
+
+  useEffect(() => {
+    // 30-second maximum interval: save if dirty regardless of user activity.
+    intervalRef.current = setInterval(() => {
+      void saveIfNeeded();
+    }, MAX_INTERVAL_MS);
+
+    return () => {
+      // Clean up interval on unmount.
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      // Clean up any pending debounce on unmount.
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, [saveIfNeeded]);
+
+  const markDirty = useCallback(() => {
+    // Ignore store mutations that happen while the initial snapshot is loading.
+    if (isLoadingSnapshotRef.current) return;
+
+    dirtyRef.current = true;
+
+    // Reset the debounce window.
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      void saveIfNeeded();
+    }, DEBOUNCE_MS);
+  }, [saveIfNeeded]);
+
+
 
   const handleMount = useCallback(
     (editor: Editor) => {
@@ -30,7 +133,7 @@ const Whiteboard = () => {
 
       if (!workspaceId) {
         setIsLoadingSnapshot(false);
-        setStatus("Workspace not found");
+        setSaveStatus("error");
         return;
       }
 
@@ -48,14 +151,14 @@ const Whiteboard = () => {
 
           if (snapshot) {
             loadSnapshot(editor.store, snapshot as unknown as TLEditorSnapshot);
-            setStatus("Loaded saved snapshot");
-          } else {
-            setStatus("Empty whiteboard");
           }
+          // Snapshot (or blank board) is now loaded — start tracking changes.
+          setSaveStatus("idle");
         } catch (err) {
           if (!cancelled) {
             const { message } = parseApiError(err);
-            setStatus(message);
+            console.error("[Snapshot load] Failed:", message);
+            setSaveStatus("error");
           }
         } finally {
           if (!cancelled) {
@@ -66,62 +169,93 @@ const Whiteboard = () => {
 
       void loadSavedSnapshot();
 
+      // Register the store listener. tldraw calls this on every document
+      // change (shapes, pages, etc.). We gate on isLoadingSnapshotRef inside
+      // markDirty so the initial loadSnapshot() call does not trigger a save.
+      const unsubscribe = editor.store.listen(
+        () => {
+          markDirty();
+        },
+        // Only listen to document (user-facing) changes, not ephemeral UI state.
+        { scope: "document" },
+      );
+
       return () => {
         cancelled = true;
+        unsubscribe();
       };
     },
-    [workspaceId],
+    [workspaceId, markDirty],
   );
 
-  const handleSave = async () => {
-    const editor = editorRef.current;
 
-    if (!editor || !workspaceId || isSaving) return;
+  useEffect(() => {
+    if (!lastSavedAt) return;
 
-    setIsSaving(true);
+    // Immediately sync so the label is accurate on the render that sets lastSavedAt.
+    setNow(new Date());
 
-    try {
-      const snapshot = JSON.parse(
-        JSON.stringify(getSnapshot(editor.store)),
-      ) as TLEditorSnapshot;
+    tickRef.current = setInterval(() => {
+      setNow(new Date());
+    }, 1_000);
 
-      await saveWorkspaceSnapshot(
-        workspaceId,
-        snapshot as unknown as Record<string, unknown>,
-      );
-      setStatus("Snapshot saved");
-    } catch (err) {
-      const { message } = parseApiError(err);
-      setStatus(message);
-    } finally {
-      setIsSaving(false);
+    return () => {
+      if (tickRef.current !== null) {
+        clearInterval(tickRef.current);
+        tickRef.current = null;
+      }
+    };
+  }, [lastSavedAt]);
+  const getSaveStatusText = (): string | null => {
+    if (saveStatus === "saving") return "Saving…";
+    if (saveStatus === "error") return "Save failed";
+
+    if (saveStatus === "saved" && lastSavedAt) {
+      const elapsedMs = now.getTime() - lastSavedAt.getTime();
+      const elapsedSec = Math.floor(elapsedMs / 1_000);
+
+      if (elapsedSec < 3) return "🟢 All changes saved";
+
+      if (elapsedSec < 60) return `Last saved ${elapsedSec} seconds ago`;
+
+      const elapsedMin = Math.floor(elapsedSec / 60);
+      if (elapsedMin < 60) {
+        return elapsedMin === 1
+          ? "Last saved 1 minute ago"
+          : `Last saved ${elapsedMin} minutes ago`;
+      }
+
+      const elapsedHr = Math.floor(elapsedMin / 60);
+      return elapsedHr === 1
+        ? "Last saved 1 hour ago"
+        : `Last saved ${elapsedHr} hours ago`;
     }
+
+    // idle + never saved — nothing to show.
+    return null;
   };
+
+  const label = getSaveStatusText();
+
 
   return (
     <div className="tldraw__editor relative h-full w-full">
       <Tldraw colorScheme={colorScheme} onMount={handleMount} />
 
-      {/* Temporary development controls — top-right to avoid tldraw chrome */}
-      <div className="pointer-events-none absolute right-3 top-3 z-[300] flex flex-col items-end gap-2">
-        <div className="pointer-events-auto flex flex-wrap justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              void handleSave();
-            }}
-            disabled={!workspaceId || isSaving || isLoadingSnapshot}
-            className="rounded border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSaving ? "Saving…" : "Save"}
-          </button>
-        </div>
-        {status ? (
-          <p className="pointer-events-none max-w-xs rounded bg-white/90 px-2 py-1 text-right text-xs text-gray-600 shadow-sm">
-            {status}
+      {/* Autosave status indicator — top-right, non-interactive */}
+      {isLoadingSnapshot ? (
+        <div className="pointer-events-none absolute right-3 top-3 z-[300]">
+          <p className="rounded bg-white/90 px-2 py-1 text-right text-xs text-gray-600 shadow-sm">
+            Loading…
           </p>
-        ) : null}
-      </div>
+        </div>
+      ) : label ? (
+        <div className="pointer-events-none absolute right-3 top-3 z-[300]">
+          <p className="rounded bg-white/90 px-2 py-1 text-right text-xs text-gray-600 shadow-sm">
+            {label}
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 };
