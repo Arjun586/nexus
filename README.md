@@ -13,9 +13,12 @@ Completed milestones:
 - [x] Authentication (registration, login, JWT access/refresh tokens, HTTP-only cookies, logout, protected routes)
 - [x] Authentication UI
 - [x] Workspace UI
+- [x] Canvas
 
 Current work:
-- [ ] Canvas
+- [ ] Integrate Hocuspocus
+- [ ] Integrate Yjs
+- [ ] Synchronize whiteboard between multiple users
 
 
 ## Why Nexus?
