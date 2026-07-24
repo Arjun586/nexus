@@ -214,8 +214,8 @@ Goal: Build the smallest deployable collaborative whiteboard.
 - [x] Local shape creation (drawing, sticky notes, text, basic shapes)
 - [x] Local shape editing
 - [x] Local shape dragging and positioning on the infinite canvas
-- [ ] Integrate Hocuspocus
-- [ ] Integrate Yjs
+- [x] Integrate Hocuspocus
+- [x] Integrate Yjs
 - [ ] Synchronize whiteboard between multiple users
 - [ ] Save and load workspaces from PostgreSQL
 - [ ] Deploy MVP

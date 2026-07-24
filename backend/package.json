@@ -7,9 +7,11 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts"
+    "dev": "tsx watch src/server.ts",
+    "dev:collaboration": "tsx watch src/collaboration/server.ts"
   },
   "dependencies": {
+    "@hocuspocus/server": "^4.4.0",
     "@prisma/client": "^6.19.3",
     "argon2": "^0.44.0",
     "cookie-parser": "^1.4.7",
