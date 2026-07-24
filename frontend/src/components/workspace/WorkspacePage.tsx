@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useOutletContext } from "react-router-dom";
 
 import { getWorkspace, renameWorkspace } from "../../api/workspace";
+import { useCollaboration } from "../../collaboration/useCollaboration";
 import type { Workspace } from "../../types/workspace";
 import { parseApiError } from "../../utils/parse-api-error";
 import CanvasContainer from "./CanvasContainer";
@@ -14,6 +15,10 @@ type AppLayoutContext = {
 const WorkspacePage = () => {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { onWorkspaceRenamed } = useOutletContext<AppLayoutContext>();
+
+  // Connect to the Hocuspocus collaboration server for this workspace.
+  // The returned doc/provider are not consumed by child components yet.
+  useCollaboration(workspaceId);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
