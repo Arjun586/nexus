@@ -1,261 +1,235 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
 import {
-  getSnapshot,
-  loadSnapshot,
   Tldraw,
   type Editor,
-  type TLEditorSnapshot,
+  type TLRecord,
 } from "tldraw";
 import "tldraw/tldraw.css";
+import * as Y from "yjs";
 
-import {
-  getWorkspaceSnapshot,
-  saveWorkspaceSnapshot,
-} from "../../api/workspace";
-import { parseApiError } from "../../utils/parse-api-error";
+import type { CollaborationState } from "../../collaboration/useCollaboration";
 import useAppColorScheme from "./use-app-color-scheme";
 
+interface WhiteboardProps {
+  collabState: CollaborationState | null;
+}
 
-type SaveStatus = "idle" | "saving" | "saved" | "error";
+/**
+ * Unique origin used for tldraw -> Yjs transactions.
+ *
+ * When our Y.Map observer sees a transaction with this origin,
+ * it knows that the change came from this same client and should
+ * not be applied back into the tldraw store.
+ */
+const TLDRAW_ORIGIN = Symbol("tldraw");
 
-
-const DEBOUNCE_MS = 2_000;
-const MAX_INTERVAL_MS = 30_000;
-
-const Whiteboard = () => {
-  const { workspaceId } = useParams<{ workspaceId: string }>();
+const Whiteboard = ({ collabState }: WhiteboardProps) => {
   const colorScheme = useAppColorScheme();
 
-  // Refs — mutated directly to avoid re-renders inside timers/listeners.
   const editorRef = useRef<Editor | null>(null);
-  const dirtyRef = useRef(false);
-  const isSavingRef = useRef(false);
-  const isLoadingSnapshotRef = useRef(true);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Rendered state — only what the UI actually needs.
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const [isLoadingSnapshot, setIsLoadingSnapshot] = useState(true);
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [now, setNow] = useState<Date>(new Date());
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /**
+   * We need state as well as a ref here because setting the editor
+   * should trigger the synchronization effect below.
+   */
+  const [editor, setEditor] = useState<Editor | null>(null);
 
-  // Keep the ref in sync with state so timers see the latest value without
-  // being added to dependency arrays.
+  const handleMount = useCallback((mountedEditor: Editor) => {
+    editorRef.current = mountedEditor;
+    setEditor(mountedEditor);
+  }, []);
+
+  /**
+   * Establish the tldraw <-> Yjs synchronization bridge.
+   *
+   * React owns this lifecycle so that all observers/listeners are
+   * reliably cleaned up when the workspace changes or unmounts.
+   */
   useEffect(() => {
-    isLoadingSnapshotRef.current = isLoadingSnapshot;
-  }, [isLoadingSnapshot]);
-
-
-  const saveIfNeeded = useCallback(async () => {
-    const editor = editorRef.current;
-
-    // Guard: skip if any pre-condition is not met.
-    if (
-      !editor ||
-      !workspaceId ||
-      isSavingRef.current ||
-      !dirtyRef.current
-    ) {
+    if (!editor || !collabState) {
       return;
     }
 
-    isSavingRef.current = true;
-    dirtyRef.current = false;
-    setSaveStatus("saving");
-
-    try {
-      const snapshot = JSON.parse(
-        JSON.stringify(getSnapshot(editor.store)),
-      ) as TLEditorSnapshot;
-
-      await saveWorkspaceSnapshot(
-        workspaceId,
-        snapshot as unknown as Record<string, unknown>,
-      );
-
-      setSaveStatus("saved");
-      setLastSavedAt(new Date());
-    } catch (err) {
-      // Re-mark dirty so the next timer tick retries.
-      dirtyRef.current = true;
-      const { message } = parseApiError(err);
-      console.error("[Autosave] Failed:", message);
-      setSaveStatus("error");
-    } finally {
-      isSavingRef.current = false;
+    if (collabState.status !== "connected") {
+      return;
     }
-  }, [workspaceId]);
 
+    const { doc } = collabState;
 
-  useEffect(() => {
-    // 30-second maximum interval: save if dirty regardless of user activity.
-    intervalRef.current = setInterval(() => {
-      void saveIfNeeded();
-    }, MAX_INTERVAL_MS);
+    /**
+     * The Hocuspocus document itself is already scoped by workspaceId,
+     * so we only need one stable map name inside that document.
+     */
+    const yMap = doc.getMap<TLRecord>("tldraw-records");
 
-    return () => {
-      // Clean up interval on unmount.
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      // Clean up any pending debounce on unmount.
-      if (debounceTimerRef.current !== null) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
-    };
-  }, [saveIfNeeded]);
+    console.log("[Whiteboard Sync] Setting up tldraw <-> Yjs bridge");
 
-  const markDirty = useCallback(() => {
-    // Ignore store mutations that happen while the initial snapshot is loading.
-    if (isLoadingSnapshotRef.current) return;
-
-    dirtyRef.current = true;
-
-    // Reset the debounce window.
-    if (debounceTimerRef.current !== null) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    debounceTimerRef.current = setTimeout(() => {
-      void saveIfNeeded();
-    }, DEBOUNCE_MS);
-  }, [saveIfNeeded]);
-
-
-
-  const handleMount = useCallback(
-    (editor: Editor) => {
-      editorRef.current = editor;
-
-      if (!workspaceId) {
-        setIsLoadingSnapshot(false);
-        setSaveStatus("error");
+    /**
+     * ---------------------------------------------------------
+     * 1. Yjs -> tldraw
+     * ---------------------------------------------------------
+     *
+     * Runs whenever records in the shared Y.Map change.
+     */
+    const handleYjsChange = (
+      event: Y.YMapEvent<TLRecord>,
+      transaction: Y.Transaction,
+    ) => {
+      /**
+       * Ignore transactions created by our own tldraw -> Yjs listener.
+       *
+       * This prevents:
+       *
+       * tldraw
+       *   -> Yjs
+       *   -> tldraw
+       *   -> Yjs
+       *   -> ...
+       */
+      if (transaction.origin === TLDRAW_ORIGIN) {
         return;
       }
 
-      let cancelled = false;
+      const recordsToPut: TLRecord[] = [];
+      const recordIdsToRemove: TLRecord["id"][] = [];
 
-      const loadSavedSnapshot = async () => {
-        setIsLoadingSnapshot(true);
+      event.changes.keys.forEach((change, recordId) => {
+        if (change.action === "add" || change.action === "update") {
+          const record = yMap.get(recordId);
 
-        try {
-          const response = await getWorkspaceSnapshot(workspaceId);
-
-          if (cancelled) return;
-
-          const { snapshot } = response.data;
-
-          if (snapshot) {
-            loadSnapshot(editor.store, snapshot as unknown as TLEditorSnapshot);
+          if (record) {
+            recordsToPut.push(record);
           }
-          // Snapshot (or blank board) is now loaded — start tracking changes.
-          setSaveStatus("idle");
-        } catch (err) {
-          if (!cancelled) {
-            const { message } = parseApiError(err);
-            console.error("[Snapshot load] Failed:", message);
-            setSaveStatus("error");
-          }
-        } finally {
-          if (!cancelled) {
-            setIsLoadingSnapshot(false);
-          }
+
+          return;
         }
-      };
 
-      void loadSavedSnapshot();
+        if (change.action === "delete") {
+          recordIdsToRemove.push(recordId as TLRecord["id"]);
+        }
+      });
 
-      // Register the store listener. tldraw calls this on every document
-      // change (shapes, pages, etc.). We gate on isLoadingSnapshotRef inside
-      // markDirty so the initial loadSnapshot() call does not trigger a save.
-      const unsubscribe = editor.store.listen(
-        () => {
-          markDirty();
-        },
-        // Only listen to document (user-facing) changes, not ephemeral UI state.
-        { scope: "document" },
+      /**
+       * Tell tldraw these are remote changes.
+       *
+       * This is important for correct store semantics and also ensures
+       * our local store listener can ignore these changes.
+       */
+      editor.store.mergeRemoteChanges(() => {
+        if (recordsToPut.length > 0) {
+          editor.store.put(recordsToPut);
+        }
+
+        if (recordIdsToRemove.length > 0) {
+          editor.store.remove(recordIdsToRemove);
+        }
+      });
+    };
+
+    yMap.observe(handleYjsChange);
+
+    /**
+     * ---------------------------------------------------------
+     * 2. Initial Yjs -> tldraw hydration
+     * ---------------------------------------------------------
+     *
+     * Copy any records already present in the shared document
+     * into this client's tldraw store.
+     */
+    const initialRecords = Array.from(yMap.values());
+
+    if (initialRecords.length > 0) {
+      console.log(
+        `[Whiteboard Sync] Loading ${initialRecords.length} existing records`,
       );
 
-      return () => {
-        cancelled = true;
-        unsubscribe();
-      };
-    },
-    [workspaceId, markDirty],
-  );
-
-
-  useEffect(() => {
-    if (!lastSavedAt) return;
-
-    // Immediately sync so the label is accurate on the render that sets lastSavedAt.
-    setNow(new Date());
-
-    tickRef.current = setInterval(() => {
-      setNow(new Date());
-    }, 1_000);
-
-    return () => {
-      if (tickRef.current !== null) {
-        clearInterval(tickRef.current);
-        tickRef.current = null;
-      }
-    };
-  }, [lastSavedAt]);
-  const getSaveStatusText = (): string | null => {
-    if (saveStatus === "saving") return "Saving…";
-    if (saveStatus === "error") return "Save failed";
-
-    if (saveStatus === "saved" && lastSavedAt) {
-      const elapsedMs = now.getTime() - lastSavedAt.getTime();
-      const elapsedSec = Math.floor(elapsedMs / 1_000);
-
-      if (elapsedSec < 3) return "🟢 All changes saved";
-
-      if (elapsedSec < 60) return `Last saved ${elapsedSec} seconds ago`;
-
-      const elapsedMin = Math.floor(elapsedSec / 60);
-      if (elapsedMin < 60) {
-        return elapsedMin === 1
-          ? "Last saved 1 minute ago"
-          : `Last saved ${elapsedMin} minutes ago`;
-      }
-
-      const elapsedHr = Math.floor(elapsedMin / 60);
-      return elapsedHr === 1
-        ? "Last saved 1 hour ago"
-        : `Last saved ${elapsedHr} hours ago`;
+      editor.store.mergeRemoteChanges(() => {
+        editor.store.put(initialRecords);
+      });
     }
 
-    // idle + never saved — nothing to show.
-    return null;
-  };
+    /**
+     * ---------------------------------------------------------
+     * 3. tldraw -> Yjs
+     * ---------------------------------------------------------
+     *
+     * Listen only to document-level changes.
+     *
+     * This means shared canvas data such as shapes/pages/bindings,
+     * rather than local UI state such as camera or selection.
+     */
+    const unsubscribeStore = editor.store.listen(
+      (entry) => {
+        /**
+         * Remote Yjs changes were inserted through mergeRemoteChanges().
+         *
+         * Do not send those changes straight back into Yjs.
+         */
+        if (entry.source === "remote") {
+          return;
+        }
 
-  const label = getSaveStatusText();
+        doc.transact(() => {
+          /**
+           * CREATE
+           */
+          Object.values(entry.changes.added).forEach((record) => {
+            yMap.set(record.id, record);
+          });
 
+          /**
+           * UPDATE
+           */
+          Object.values(entry.changes.updated).forEach(([, updatedRecord]) => {
+            yMap.set(updatedRecord.id, updatedRecord);
+          });
+
+          /**
+           * DELETE
+           */
+          Object.values(entry.changes.removed).forEach((record) => {
+            yMap.delete(record.id);
+          });
+        }, TLDRAW_ORIGIN);
+      },
+      {
+        scope: "document",
+      },
+    );
+
+    console.log("[Whiteboard Sync] Bridge ready");
+
+    /**
+     * React-controlled cleanup.
+     */
+    return () => {
+      console.log("[Whiteboard Sync] Cleaning up bridge");
+
+      yMap.unobserve(handleYjsChange);
+      unsubscribeStore();
+    };
+  }, [editor, collabState]);
+
+  /**
+   * Wait until the collaboration connection exists before mounting
+   * the whiteboard.
+   */
+  if (!collabState || collabState.status !== "connected") {
+    return (
+      <div className="flex h-full items-center justify-center bg-gray-50">
+        <p className="text-sm text-gray-600">
+          Connecting to collaboration server...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="tldraw__editor relative h-full w-full">
-      <Tldraw colorScheme={colorScheme} onMount={handleMount} />
-
-      {/* Autosave status indicator — top-right, non-interactive */}
-      {isLoadingSnapshot ? (
-        <div className="pointer-events-none absolute right-3 top-3 z-[300]">
-          <p className="rounded bg-white/90 px-2 py-1 text-right text-xs text-gray-600 shadow-sm">
-            Loading…
-          </p>
-        </div>
-      ) : label ? (
-        <div className="pointer-events-none absolute right-3 top-3 z-[300]">
-          <p className="rounded bg-white/90 px-2 py-1 text-right text-xs text-gray-600 shadow-sm">
-            {label}
-          </p>
-        </div>
-      ) : null}
+      <Tldraw
+        colorScheme={colorScheme}
+        onMount={handleMount}
+      />
     </div>
   );
 };

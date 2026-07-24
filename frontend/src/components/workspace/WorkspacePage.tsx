@@ -17,8 +17,7 @@ const WorkspacePage = () => {
   const { onWorkspaceRenamed } = useOutletContext<AppLayoutContext>();
 
   // Connect to the Hocuspocus collaboration server for this workspace.
-  // The returned doc/provider are not consumed by child components yet.
-  useCollaboration(workspaceId);
+  const collabState = useCollaboration(workspaceId);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +101,7 @@ const WorkspacePage = () => {
   return (
     <div className="flex h-full flex-col">
       <WorkspaceHeader workspace={workspace} onRename={handleRename} />
-      <CanvasContainer />
+      <CanvasContainer collabState={collabState} />
     </div>
   );
 };

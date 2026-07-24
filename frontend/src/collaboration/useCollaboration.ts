@@ -4,7 +4,7 @@ import { HocuspocusProvider } from "@hocuspocus/provider";
 
 export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
-interface CollaborationState {
+export interface CollaborationState {
   doc: Y.Doc;
   provider: HocuspocusProvider;
   status: ConnectionStatus;
