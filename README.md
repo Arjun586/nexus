@@ -14,10 +14,11 @@ Completed milestones:
 - [x] Authentication UI
 - [x] Workspace UI
 - [x] Canvas
+- [x] Integrate Hocuspocus
+- [x] Integrate Yjs
 
 Current work:
-- [ ] Integrate Hocuspocus
-- [ ] Integrate Yjs
+
 - [ ] Synchronize whiteboard between multiple users
 
 
