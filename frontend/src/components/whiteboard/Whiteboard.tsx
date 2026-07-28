@@ -39,11 +39,7 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
     
     const yMap = doc.getMap<TLRecord>("tldraw-records");
 
-    console.log("[Whiteboard Sync] Setting up tldraw <-> Yjs bridge");
-
-    
     const handleYjsChange = (event: Y.YMapEvent<TLRecord>,transaction: Y.Transaction, ) => {
-      
       if (transaction.origin === TLDRAW_ORIGIN) {
         return;
       }
@@ -67,7 +63,6 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
         }
       });
 
-      
       editor.store.mergeRemoteChanges(() => {
         if (recordsToPut.length > 0) {
           editor.store.put(recordsToPut);
@@ -81,45 +76,29 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
 
     yMap.observe(handleYjsChange);
 
-    
     const initialRecords = Array.from(yMap.values());
 
     if (initialRecords.length > 0) {
-      console.log(
-        `[Whiteboard Sync] Loading ${initialRecords.length} existing records`,
-      );
-
       editor.store.mergeRemoteChanges(() => {
         editor.store.put(initialRecords);
       });
     }
 
-    
     const unsubscribeStore = editor.store.listen(
       (entry) => {
-        
         if (entry.source === "remote") {
           return;
         }
 
         doc.transact(() => {
-          /**
-           * CREATE
-           */
           Object.values(entry.changes.added).forEach((record) => {
             yMap.set(record.id, record);
           });
 
-          /**
-           * UPDATE
-           */
           Object.values(entry.changes.updated).forEach(([, updatedRecord]) => {
             yMap.set(updatedRecord.id, updatedRecord);
           });
 
-          /**
-           * DELETE
-           */
           Object.values(entry.changes.removed).forEach((record) => {
             yMap.delete(record.id);
           });
@@ -130,14 +109,7 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
       },
     );
 
-    console.log("[Whiteboard Sync] Bridge ready");
-
-    /**
-     * React-controlled cleanup.
-     */
     return () => {
-      console.log("[Whiteboard Sync] Cleaning up bridge");
-
       yMap.unobserve(handleYjsChange);
       unsubscribeStore();
     };

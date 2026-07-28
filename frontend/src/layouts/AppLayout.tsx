@@ -241,47 +241,90 @@ const AppLayout = () => {
             ) : workspaces.length === 0 ? (
               <p className="px-2 text-sm text-gray-500">No workspaces yet.</p>
             ) : (
-              <ul className="space-y-1">
-                {workspaces.map((workspace) => (
-                  <li key={workspace.id} className="group flex items-center">
-                    <NavLink
-                      to={`/workspaces/${workspace.id}`}
-                      className={({ isActive }) =>
-                        [
-                          "block min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm truncate",
-                          isActive
-                            ? "bg-gray-100 font-medium text-gray-900"
-                            : "text-gray-700 hover:bg-gray-50",
-                        ].join(" ")
-                      }
-                    >
-                      {workspace.name}
-                    </NavLink>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteTarget(workspace);
-                        setDeleteError(null);
-                      }}
-                      aria-label={`Delete ${workspace.name}`}
-                      className="mr-1 shrink-0 rounded p-1 text-gray-400 opacity-0 hover:text-red-600 group-hover:opacity-100"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        className="h-3.5 w-3.5"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.519.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-4">
+                {workspaces.some((w) => w.ownerId === user?.id) ? (
+                  <div>
+                    <h3 className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                      Owned
+                    </h3>
+                    <ul className="space-y-1">
+                      {workspaces
+                        .filter((w) => w.ownerId === user?.id)
+                        .map((workspace) => (
+                          <li key={workspace.id} className="group flex items-center">
+                            <NavLink
+                              to={`/workspaces/${workspace.id}`}
+                              className={({ isActive }) =>
+                                [
+                                  "block min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm truncate",
+                                  isActive
+                                    ? "bg-gray-100 font-medium text-gray-900"
+                                    : "text-gray-700 hover:bg-gray-50",
+                                ].join(" ")
+                              }
+                            >
+                              {workspace.name}
+                            </NavLink>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeleteTarget(workspace);
+                                setDeleteError(null);
+                              }}
+                              aria-label={`Delete ${workspace.name}`}
+                              className="mr-1 shrink-0 rounded p-1 text-gray-400 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                className="h-3.5 w-3.5"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M8.75 1A2.75 2.75 0 0 0 6 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 1 0 .23 1.482l.149-.022.841 10.518A2.75 2.75 0 0 0 7.596 19h4.807a2.75 2.75 0 0 0 2.742-2.53l.841-10.519.149.023a.75.75 0 0 0 .23-1.482A41.03 41.03 0 0 0 14 4.193V3.75A2.75 2.75 0 0 0 11.25 1h-2.5ZM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4ZM8.58 7.72a.75.75 0 0 0-1.5.06l.3 7.5a.75.75 0 1 0 1.5-.06l-.3-7.5Zm4.34.06a.75.75 0 1 0-1.5-.06l-.3 7.5a.75.75 0 1 0 1.5.06l.3-7.5Z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </button>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {workspaces.some((w) => w.ownerId !== user?.id) ? (
+                  <div>
+                    <h3 className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                      Shared with me
+                    </h3>
+                    <ul className="space-y-1">
+                      {workspaces
+                        .filter((w) => w.ownerId !== user?.id)
+                        .map((workspace) => (
+                          <li key={workspace.id} className="group flex items-center">
+                            <NavLink
+                              to={`/workspaces/${workspace.id}`}
+                              className={({ isActive }) =>
+                                [
+                                  "block min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm truncate flex items-center justify-between",
+                                  isActive
+                                    ? "bg-gray-100 font-medium text-gray-900"
+                                    : "text-gray-700 hover:bg-gray-50",
+                                ].join(" ")
+                              }
+                            >
+                              <span className="truncate">{workspace.name}</span>
+                              <span className="ml-2 shrink-0 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                                Shared
+                              </span>
+                            </NavLink>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
             )}
           </nav>
         </div>
@@ -317,7 +360,7 @@ const AppLayout = () => {
       </aside>
 
       <main className="min-w-0 flex-1 overflow-auto">
-        <Outlet context={{ onWorkspaceRenamed }} />
+        <Outlet context={{ onWorkspaceRenamed, workspaces, isLoadingWorkspaces, workspacesError, loadWorkspaces }} />
       </main>
 
       <ConfirmDialog

@@ -11,19 +11,11 @@ const provider = new HocuspocusProvider({
 
 const sharedMap = doc.getMap<string>("test");
 
-provider.on("connect", () => {
-    console.log("Connected");
-});
+provider.on("connect", () => {});
 
-provider.on("synced", () => {
-    console.log("Synced");
+provider.on("synced", () => {});
 
-    console.log("Current value:", sharedMap.get("message"));
-});
-
-sharedMap.observe(() => {
-    console.log("Shared state changed:", sharedMap.get("message"));
-});
+sharedMap.observe(() => {});
 
 (window as typeof window & {
     setSharedMessage?: (message: string) => void;

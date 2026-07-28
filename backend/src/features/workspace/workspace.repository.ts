@@ -66,10 +66,15 @@ const createWorkspace = async (
 };
 
 const findWorkspacesByOwnerId = async (
-    ownerId: string,
+    userId: string,
 ): Promise<WorkspaceMetadata[]> => {
     return prisma.workspace.findMany({
-        where: { ownerId },
+        where: {
+            OR: [
+                { ownerId: userId },
+                { memberships: { some: { userId } } },
+            ],
+        },
         orderBy: { createdAt: "desc" },
         select: workspaceMetadataSelect,
     });
@@ -77,35 +82,53 @@ const findWorkspacesByOwnerId = async (
 
 const findWorkspaceByIdAndOwnerId = async (
     id: string,
-    ownerId: string,
+    userId: string,
 ): Promise<WorkspaceMetadata | null> => {
     return prisma.workspace.findFirst({
-        where: { id, ownerId },
+        where: {
+            id,
+            OR: [
+                { ownerId: userId },
+                { memberships: { some: { userId } } },
+            ],
+        },
         select: workspaceMetadataSelect,
     });
 };
 
 const getSnapshot = async (
     workspaceId: string,
-    ownerId: string,
+    userId: string,
 ): Promise<{ snapshot: Prisma.JsonValue | null } | null> => {
     return prisma.workspace.findFirst({
-        where: { id: workspaceId, ownerId },
+        where: {
+            id: workspaceId,
+            OR: [
+                { ownerId: userId },
+                { memberships: { some: { userId } } },
+            ],
+        },
         select: { snapshot: true },
     });
 };
 
 const saveSnapshot = async (
     workspaceId: string,
-    ownerId: string,
+    userId: string,
     snapshot: Prisma.InputJsonValue,
 ): Promise<{ snapshot: Prisma.JsonValue | null } | null> => {
-    const owned = await prisma.workspace.findFirst({
-        where: { id: workspaceId, ownerId },
+    const accessible = await prisma.workspace.findFirst({
+        where: {
+            id: workspaceId,
+            OR: [
+                { ownerId: userId },
+                { memberships: { some: { userId } } },
+            ],
+        },
         select: { id: true },
     });
 
-    if (!owned) {
+    if (!accessible) {
         return null;
     }
 
@@ -118,12 +141,12 @@ const saveSnapshot = async (
 
 const renameWorkspace = async (
     workspaceId: string,
-    ownerId: string,
+    userId: string,
     name: string,
 ): Promise<WorkspaceMetadata | null> => {
-    const owned = await findWorkspaceByIdAndOwnerId(workspaceId, ownerId);
+    const accessible = await findWorkspaceByIdAndOwnerId(workspaceId, userId);
 
-    if (!owned) {
+    if (!accessible) {
         return null;
     }
 
@@ -138,7 +161,10 @@ const deleteWorkspace = async (
     workspaceId: string,
     ownerId: string,
 ): Promise<boolean> => {
-    const owned = await findWorkspaceByIdAndOwnerId(workspaceId, ownerId);
+    const owned = await prisma.workspace.findFirst({
+        where: { id: workspaceId, ownerId },
+        select: { id: true },
+    });
 
     if (!owned) {
         return false;

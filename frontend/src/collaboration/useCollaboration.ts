@@ -42,8 +42,6 @@ export function useCollaboration(
 
     activeIdRef.current = workspaceId;
 
-    console.log(`[Collaboration] Connecting to workspace: ${workspaceId}`);
-
     const doc = new Y.Doc();
 
     const accessToken = getAccessToken();
@@ -55,7 +53,6 @@ export function useCollaboration(
       token: accessToken || "",
 
       onConnect: () => {
-        console.log(`[Collaboration] Connected: ${workspaceId}`);
         setState({ doc, provider, status: "connected" });
       },
       onStatus: ({ status }) => {
@@ -64,7 +61,6 @@ export function useCollaboration(
         );
       },
       onDisconnect: () => {
-        console.log(`[Collaboration] Disconnected: ${workspaceId}`);
         setState((prev) =>
           prev ? { ...prev, status: "disconnected" } : null,
         );
@@ -81,9 +77,6 @@ export function useCollaboration(
         activeIdRef.current = undefined;
       }
 
-      console.log(
-        `[Collaboration] Cleaning up provider for workspace: ${workspaceId}`,
-      );
       provider.destroy();
       doc.destroy();
       setState(null);

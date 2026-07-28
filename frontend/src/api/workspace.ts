@@ -1,5 +1,10 @@
 import { getAccessToken } from "../session/access-token";
 import type {
+  GetCollaboratorsResponse,
+  InviteCollaboratorInput,
+  InviteCollaboratorResponse,
+} from "../types/collaborator";
+import type {
   CreateWorkspaceInput,
   CreateWorkspaceResponse,
   DeleteWorkspaceResponse,
@@ -109,6 +114,30 @@ export async function deleteWorkspace(
 ): Promise<DeleteWorkspaceResponse> {
   const { data } = await apiClient.delete<DeleteWorkspaceResponse>(
     workspaceById(workspaceId),
+    getAuthHeaders(),
+  );
+
+  return data;
+}
+
+export async function getCollaborators(
+  workspaceId: string,
+): Promise<GetCollaboratorsResponse> {
+  const { data } = await apiClient.get<GetCollaboratorsResponse>(
+    `${workspaceById(workspaceId)}/members`,
+    getAuthHeaders(),
+  );
+
+  return data;
+}
+
+export async function inviteCollaborator(
+  workspaceId: string,
+  input: InviteCollaboratorInput,
+): Promise<InviteCollaboratorResponse> {
+  const { data } = await apiClient.post<InviteCollaboratorResponse>(
+    `${workspaceById(workspaceId)}/members`,
+    input,
     getAuthHeaders(),
   );
 

@@ -12,14 +12,16 @@ Completed milestones:
 - [x] ADR documentation
 - [x] Authentication (registration, login, JWT access/refresh tokens, HTTP-only cookies, logout, protected routes)
 - [x] Authentication UI
-- [x] Workspace UI
-- [x] Canvas
-- [x] Integrate Hocuspocus
-- [x] Integrate Yjs
+- [x] Workspace UI & Routing (create, list, rename, delete)
+- [x] Shared Workspaces & Member Invites (owner/member access, collaborator management, role badges)
+- [x] Infinite Canvas Integration (tldraw)
+- [x] Integrate Hocuspocus & Yjs (real-time CRDT state synchronization engine)
+- [x] Multi-user Whiteboard Synchronization
+- [x] Workspace Snapshot & Yjs State Persistence in PostgreSQL
 
 Current work:
-
-- [ ] Synchronize whiteboard between multiple users
+- [ ] User Presence & Ghost Cursors (Phase 2)
+- [ ] Deploy MVP
 
 
 ## Why Nexus?
@@ -211,8 +213,9 @@ Goal: Build the smallest deployable collaborative whiteboard.
 - [x] JWT (access token generation)
 - [x] Refresh Tokens (persistence, refresh endpoint)
 - [x] Protected Routes (auth middleware)
-- [x] Authentication UI (Pending)
-- [x] Workspace CRUD (Pending)
+- [x] Authentication UI
+- [x] Workspace CRUD (create, list, rename, delete)
+- [x] Shared Workspaces & Member Invites
 - [x] Create shared Zod schemas
 - [x] Integrate tldraw
 - [x] Local shape creation (drawing, sticky notes, text, basic shapes)
@@ -220,8 +223,8 @@ Goal: Build the smallest deployable collaborative whiteboard.
 - [x] Local shape dragging and positioning on the infinite canvas
 - [x] Integrate Hocuspocus
 - [x] Integrate Yjs
-- [ ] Synchronize whiteboard between multiple users
-- [ ] Save and load workspaces from PostgreSQL
+- [x] Synchronize whiteboard between multiple users
+- [x] Save and load workspaces from PostgreSQL
 - [ ] Deploy MVP
 
 ### Phase 2 — Collaboration Experience
@@ -233,7 +236,7 @@ Goal: Make collaboration feel polished.
 - [ ] Online status
 - [ ] Reconnection handling
 - [ ] Undo / Redo improvements
-- [ ] Workspace routing
+- [x] Workspace routing
 - [ ] Better loading states
 
 ### Phase 3 — Scaling

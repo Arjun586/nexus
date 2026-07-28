@@ -175,7 +175,7 @@ const inviteMember = async (
 };
 
 const getMembers = async (
-    ownerId: string,
+    userId: string,
     workspaceId: string,
 ): Promise<WorkspaceMember[]> => {
     const workspace = await workspaceRepository.findWorkspaceById(workspaceId);
@@ -184,10 +184,12 @@ const getMembers = async (
         throw new ApiError(404, "Workspace not found");
     }
 
-    if (workspace.ownerId !== ownerId) {
+    const membership = await workspaceRepository.findMembership(workspaceId, userId);
+
+    if (!membership && workspace.ownerId !== userId) {
         throw new ApiError(
             403,
-            "Only the workspace owner can view members",
+            "Only workspace members can view members",
         );
     }
 

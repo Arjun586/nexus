@@ -6,6 +6,7 @@ import { useCollaboration } from "../../collaboration/useCollaboration";
 import type { Workspace } from "../../types/workspace";
 import { parseApiError } from "../../utils/parse-api-error";
 import CanvasContainer from "./CanvasContainer";
+import MembersModal from "./MembersModal";
 import WorkspaceHeader from "./WorkspaceHeader";
 
 type AppLayoutContext = {
@@ -21,6 +22,7 @@ const WorkspacePage = () => {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [membersOpen, setMembersOpen] = useState(false);
 
   useEffect(() => {
     if (!workspaceId) {
@@ -100,8 +102,20 @@ const WorkspacePage = () => {
 
   return (
     <div className="flex h-full flex-col">
-      <WorkspaceHeader workspace={workspace} onRename={handleRename} />
+      <WorkspaceHeader
+        workspace={workspace}
+        onRename={handleRename}
+        onMembersOpen={() => setMembersOpen(true)}
+      />
       <CanvasContainer collabState={collabState} />
+
+      {membersOpen ? (
+        <MembersModal
+          workspaceId={workspace.id}
+          ownerId={workspace.ownerId}
+          onClose={() => setMembersOpen(false)}
+        />
+      ) : null}
     </div>
   );
 };
