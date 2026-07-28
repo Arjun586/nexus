@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
 import { HocuspocusProvider } from "@hocuspocus/provider";
+import { getAccessToken } from "../session/access-token";
 
 export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
@@ -45,10 +46,14 @@ export function useCollaboration(
 
     const doc = new Y.Doc();
 
+    const accessToken = getAccessToken();
+
     const provider = new HocuspocusProvider({
       url: HOCUSPOCUS_WS_URL,
       name: workspaceId,
       document: doc,
+      token: accessToken || "",
+
       onConnect: () => {
         console.log(`[Collaboration] Connected: ${workspaceId}`);
         setState({ doc, provider, status: "connected" });
