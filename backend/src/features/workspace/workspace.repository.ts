@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { WorkspaceRole } from "@prisma/client";
 
 import { prisma } from "../../shared/lib/prisma.js";
 
@@ -22,9 +23,21 @@ type WorkspaceMetadata = Prisma.WorkspaceGetPayload<{
 const createWorkspace = async (
     data: CreateWorkspaceData,
 ): Promise<WorkspaceMetadata> => {
-    return prisma.workspace.create({
-        data,
-        select: workspaceMetadataSelect,
+    return prisma.$transaction(async (tx) => {
+        const workspace = await tx.workspace.create({
+            data,
+            select: workspaceMetadataSelect,
+        });
+
+        await tx.membership.create({
+            data: {
+                userId: data.ownerId,
+                workspaceId: workspace.id,
+                role: WorkspaceRole.OWNER,
+            },
+        });
+
+        return workspace;
     });
 };
 

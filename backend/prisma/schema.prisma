@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum WorkspaceRole {
+  OWNER
+  EDITOR
+}
+
 model User {
   id           String @id @default(uuid()) @db.Uuid
   name         String
@@ -16,8 +21,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  refreshTokens RefreshToken[]
-  workspaces    Workspace[]
+  refreshTokens   RefreshToken[]
+  ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
+  memberships     Membership[]
 }
 
 model RefreshToken {
@@ -37,14 +43,39 @@ model RefreshToken {
 }
 
 model Workspace {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String
-  ownerId   String   @db.Uuid
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  snapshot  Json?
+  id String @id @default(uuid()) @db.Uuid
+
+  name String
+
+  ownerId String @db.Uuid
+  owner   User   @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  memberships Membership[]
+
+  snapshot Json?
   yjsState Bytes?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([ownerId])
+}
+
+model Membership {
+  id String @id @default(uuid()) @db.Uuid
+
+  role WorkspaceRole
+
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workspaceId String    @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, workspaceId])
+
+  @@index([userId])
+  @@index([workspaceId])
 }
