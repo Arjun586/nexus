@@ -17,3 +17,10 @@ export const saveSnapshotSchema = z.object({
 export const renameWorkspaceSchema = z.object({
     name: workspaceName,
 });
+
+
+export const inviteMemberSchema = z.object({
+    email: z.string().email(),
+});
+
+export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;

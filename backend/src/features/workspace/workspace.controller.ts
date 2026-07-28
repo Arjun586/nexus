@@ -14,6 +14,10 @@ const requireWorkspaceId = (req: Request): string => {
     return workspaceId;
 };
 
+type WorkspaceParams = {
+    workspaceId: string;
+};
+
 const createWorkspace = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     if (!req.user) {
         throw new ApiError(401, "Unauthorized");
@@ -122,6 +126,33 @@ const deleteWorkspace = asyncHandler(async (req: Request, res: Response): Promis
     });
 });
 
+const inviteMember = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const member = await workspaceService.inviteMember(
+        req.user.userId,
+        requireWorkspaceId(req),
+        req.body,
+    );
+
+    res.status(201).json(member);
+});
+
+const getMembers = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const members = await workspaceService.getMembers(
+        req.user.userId,
+        requireWorkspaceId(req),
+    );
+
+    res.status(200).json(members);
+});
+
 export const workspaceController = {
     createWorkspace,
     getWorkspaces,
@@ -130,4 +161,6 @@ export const workspaceController = {
     saveSnapshot,
     renameWorkspace,
     deleteWorkspace,
+    inviteMember,
+    getMembers,
 };

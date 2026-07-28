@@ -5,6 +5,7 @@ import { validate } from "../../shared/middleware/validate.js";
 import { workspaceController } from "./workspace.controller.js";
 import {
     createWorkspaceSchema,
+    inviteMemberSchema,
     renameWorkspaceSchema,
     saveSnapshotSchema,
 } from "./workspace.validation.js";
@@ -24,5 +25,9 @@ router.patch("/:workspaceId", authenticate, validate(renameWorkspaceSchema), wor
 router.delete("/:workspaceId", authenticate, workspaceController.deleteWorkspace);
 
 router.get("/:workspaceId", authenticate, workspaceController.getWorkspaceById);
+
+router.get("/:workspaceId/members", authenticate, workspaceController.getMembers);
+
+router.post("/:workspaceId/members", authenticate, validate(inviteMemberSchema), workspaceController.inviteMember);
 
 export default router;

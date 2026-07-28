@@ -20,6 +20,30 @@ type WorkspaceMetadata = Prisma.WorkspaceGetPayload<{
     select: typeof workspaceMetadataSelect;
 }>;
 
+type AddMemberData = {
+    workspaceId: string;
+    userId: string;
+    role: WorkspaceRole;
+};
+
+const memberSelect = {
+    id: true,
+    role: true,
+    createdAt: true,
+    user: {
+        select: {
+            id: true,
+            name: true,
+            email: true,
+        },
+    },
+} satisfies Prisma.MembershipSelect;
+
+
+type WorkspaceMember = Prisma.MembershipGetPayload<{
+    select: typeof memberSelect;
+}>;
+
 const createWorkspace = async (
     data: CreateWorkspaceData,
 ): Promise<WorkspaceMetadata> => {
@@ -127,6 +151,58 @@ const deleteWorkspace = async (
     return true;
 };
 
+
+const addMember = async (
+    data: AddMemberData,
+): Promise<WorkspaceMember> => {
+    return prisma.membership.create({
+        data,
+        select: memberSelect,
+    });
+};
+
+
+const findMembership = async (
+    workspaceId: string,
+    userId: string,
+): Promise<WorkspaceMember | null> => {
+    return prisma.membership.findUnique({
+        where: {
+            userId_workspaceId: {
+                userId,
+                workspaceId,
+            },
+        },
+        select: memberSelect,
+    });
+};
+
+
+const listMembers = async (
+    workspaceId: string,
+): Promise<WorkspaceMember[]> => {
+    return prisma.membership.findMany({
+        where: {
+            workspaceId,
+        },
+        select: memberSelect,
+        orderBy: {
+            createdAt: "asc",
+        },
+    });
+};
+
+const findWorkspaceById = async (
+    workspaceId: string,
+): Promise<WorkspaceMetadata | null> => {
+    return prisma.workspace.findUnique({
+        where: {
+            id: workspaceId,
+        },
+        select: workspaceMetadataSelect,
+    });
+};
+
 export const workspaceRepository = {
     createWorkspace,
     findWorkspacesByOwnerId,
@@ -135,6 +211,14 @@ export const workspaceRepository = {
     saveSnapshot,
     renameWorkspace,
     deleteWorkspace,
+    addMember,
+    findMembership,
+    listMembers,
+    findWorkspaceById,
 };
 
-export type { WorkspaceMetadata };
+export type {
+    WorkspaceMetadata,
+    WorkspaceMember,
+    AddMemberData,
+};
