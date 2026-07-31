@@ -31,7 +31,7 @@ export function useCollaboration(
   useEffect(() => {
     if (!workspaceId) {
       activeIdRef.current = undefined;
-      setState(null);
+      queueMicrotask(() => setState(null));
       return;
     }
 
@@ -67,7 +67,9 @@ export function useCollaboration(
       },
     });
 
-    setState({ doc, provider, status: "connecting" });
+    queueMicrotask(() => {
+      setState({ doc, provider, status: "connecting" });
+    });
 
     return () => {
       // Only tear down if this cleanup corresponds to the *current* workspace.
@@ -79,7 +81,7 @@ export function useCollaboration(
 
       provider.destroy();
       doc.destroy();
-      setState(null);
+      queueMicrotask(() => setState(null));
     };
   }, [workspaceId]);
 

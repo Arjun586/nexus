@@ -1,12 +1,16 @@
+import { Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
+import PageFallback from "../components/PageFallback";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AppLayout from "../layouts/AppLayout";
-import Dashboard from "../pages/Dashboard";
-import Login from "../pages/Login";
-import NotFound from "../pages/NotFound";
-import Register from "../pages/Register";
-import WorkspacePage from "../components/workspace/WorkspacePage";
+import {
+  LazyDashboard,
+  LazyLogin,
+  LazyNotFound,
+  LazyRegister,
+  LazyWorkspacePage,
+} from "./lazyRoutes";
 
 export const router = createBrowserRouter([
   {
@@ -15,11 +19,19 @@ export const router = createBrowserRouter([
   },
   {
     path: "/login",
-    element: <Login />,
+    element: (
+      <Suspense fallback={<PageFallback />}>
+        <LazyLogin />
+      </Suspense>
+    ),
   },
   {
     path: "/register",
-    element: <Register />,
+    element: (
+      <Suspense fallback={<PageFallback />}>
+        <LazyRegister />
+      </Suspense>
+    ),
   },
   {
     element: (
@@ -30,16 +42,28 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/dashboard",
-        element: <Dashboard />,
+        element: (
+          <Suspense fallback={<PageFallback />}>
+            <LazyDashboard />
+          </Suspense>
+        ),
       },
       {
         path: "/workspaces/:workspaceId",
-        element: <WorkspacePage />,
+        element: (
+          <Suspense fallback={<PageFallback />}>
+            <LazyWorkspacePage />
+          </Suspense>
+        ),
       },
     ],
   },
   {
     path: "*",
-    element: <NotFound />,
+    element: (
+      <Suspense fallback={<PageFallback />}>
+        <LazyNotFound />
+      </Suspense>
+    ),
   },
 ]);

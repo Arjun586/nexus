@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Tldraw, type Editor, type TLRecord,} from "tldraw";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { Tldraw, type Editor, type TLRecord } from "tldraw";
 import "tldraw/tldraw.css";
 import * as Y from "yjs";
 
 import type { CollaborationState } from "../../collaboration/useCollaboration";
-import useAppColorScheme from "./use-app-color-scheme";
 
 interface WhiteboardProps {
   collabState: CollaborationState | null;
@@ -13,8 +12,6 @@ interface WhiteboardProps {
 const TLDRAW_ORIGIN = Symbol("tldraw");
 
 const Whiteboard = ({ collabState }: WhiteboardProps) => {
-  const colorScheme = useAppColorScheme();
-
   const editorRef = useRef<Editor | null>(null);
 
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -23,7 +20,6 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
     editorRef.current = mountedEditor;
     setEditor(mountedEditor);
   }, []);
-
 
   useEffect(() => {
     if (!editor || !collabState) {
@@ -36,10 +32,9 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
 
     const { doc } = collabState;
 
-    
     const yMap = doc.getMap<TLRecord>("tldraw-records");
 
-    const handleYjsChange = (event: Y.YMapEvent<TLRecord>,transaction: Y.Transaction, ) => {
+    const handleYjsChange = (event: Y.YMapEvent<TLRecord>, transaction: Y.Transaction) => {
       if (transaction.origin === TLDRAW_ORIGIN) {
         return;
       }
@@ -115,25 +110,22 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
     };
   }, [editor, collabState]);
 
-  
   if (!collabState || collabState.status !== "connected") {
     return (
       <div className="flex h-full items-center justify-center bg-gray-50">
-        <p className="text-sm text-gray-600">
-          Connecting to collaboration server...
-        </p>
+        <div className="flex items-center gap-2.5 text-xs text-gray-600">
+          <span className="inline-block animate-spin rounded-full border-2 border-current border-t-transparent h-4 w-4 opacity-80" />
+          <span>Connecting to collaboration server...</span>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="tldraw__editor relative h-full w-full">
-      <Tldraw
-        colorScheme={colorScheme}
-        onMount={handleMount}
-      />
+      <Tldraw onMount={handleMount} />
     </div>
   );
 };
 
-export default Whiteboard;
+export default memo(Whiteboard);

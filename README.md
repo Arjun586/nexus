@@ -18,6 +18,7 @@ Completed milestones:
 - [x] Integrate Hocuspocus & Yjs (real-time CRDT state synchronization engine)
 - [x] Multi-user Whiteboard Synchronization
 - [x] Workspace Snapshot & Yjs State Persistence in PostgreSQL
+- [x] Professional Collapsible Sidebar & Application Shell (260px/64px sidebar, Ctrl+B shortcut, live connection status)
 
 Current work:
 - [ ] User Presence & Ghost Cursors (Phase 2)

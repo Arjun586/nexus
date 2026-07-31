@@ -1,3 +1,5 @@
+import { memo } from "react";
+
 import type { CollaborationState } from "../../collaboration/useCollaboration";
 import Whiteboard from "../whiteboard/Whiteboard";
 
@@ -15,4 +17,4 @@ const CanvasContainer = ({ collabState }: CanvasContainerProps) => {
   );
 };
 
-export default CanvasContainer;
+export default memo(CanvasContainer);

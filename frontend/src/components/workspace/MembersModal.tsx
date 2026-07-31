@@ -4,6 +4,12 @@ import { getCollaborators, inviteCollaborator } from "../../api/workspace";
 import { getUser } from "../../session/user";
 import type { Collaborator } from "../../types/collaborator";
 import { parseApiError } from "../../utils/parse-api-error";
+import Badge from "../ui/Badge";
+import Button from "../ui/Button";
+import Input from "../ui/Input";
+import Modal from "../ui/Modal";
+import Skeleton from "../ui/Skeleton";
+import Toast from "../ui/Toast";
 
 type MembersModalProps = {
   workspaceId: string;
@@ -15,22 +21,6 @@ const getInitials = (name: string): string => {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-};
-
-const RoleBadge = ({ role }: { role: string }) => {
-  if (role === "OWNER") {
-    return (
-      <span className="rounded-full bg-gray-900 px-2 py-0.5 text-xs font-medium text-white">
-        Owner
-      </span>
-    );
-  }
-
-  return (
-    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-      {role.charAt(0) + role.slice(1).toLowerCase()}
-    </span>
-  );
 };
 
 const MembersModal = ({ workspaceId, ownerId, onClose }: MembersModalProps) => {
@@ -50,8 +40,6 @@ const MembersModal = ({ workspaceId, ownerId, onClose }: MembersModalProps) => {
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
   const [isInviting, setIsInviting] = useState(false);
 
-  // Initial fetch — setState calls are in .then/.catch/.finally callbacks
-  // (asynchronous), not synchronous in the effect body.
   useEffect(() => {
     let cancelled = false;
 
@@ -78,19 +66,7 @@ const MembersModal = ({ workspaceId, ownerId, onClose }: MembersModalProps) => {
     };
   }, [workspaceId]);
 
-  // Escape key handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isInviting) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isInviting, onClose]);
-
-  // Auto-focus email input on open
+  // Focus input on render for owner
   useEffect(() => {
     if (isOwner && inputRef.current) {
       inputRef.current.focus();
@@ -114,7 +90,7 @@ const MembersModal = ({ workspaceId, ownerId, onClose }: MembersModalProps) => {
     try {
       await inviteCollaborator(workspaceId, { email: trimmed });
       setEmail("");
-      setInviteSuccess("Member invited successfully.");
+      setInviteSuccess(`Invited ${trimmed} successfully.`);
       const data = await getCollaborators(workspaceId);
       setMembers(data);
     } catch (err) {
@@ -123,137 +99,102 @@ const MembersModal = ({ workspaceId, ownerId, onClose }: MembersModalProps) => {
       setEmailError(fieldErrors.email ?? null);
     } finally {
       setIsInviting(false);
-
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={isInviting ? undefined : onClose}
-      />
-      <div className="relative flex w-full max-w-lg flex-col rounded-lg bg-white shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">Members</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isInviting}
-            aria-label="Close members panel"
-            className="rounded p-1 text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="h-5 w-5"
+    <Modal
+      open={true}
+      onClose={onClose}
+      title="Workspace Members"
+      description="Manage members and collaborators for this workspace."
+      preventBackdropClose={isInviting}
+      maxWidth="md"
+    >
+      {/* Invite Form (owner only) */}
+      {isOwner ? (
+        <form onSubmit={handleInvite} noValidate className="mb-4 space-y-3 pb-4 border-b border-gray-200">
+          {inviteError ? <Toast variant="error" message={inviteError} onClose={() => setInviteError(null)} /> : null}
+          {inviteSuccess ? <Toast variant="success" message={inviteSuccess} onClose={() => setInviteSuccess(null)} autoDismiss={true} duration={4000} /> : null}
+
+          <div className="flex items-start gap-2">
+            <div className="flex-1">
+              <Input
+                ref={inputRef}
+                id="invite-email"
+                type="email"
+                placeholder="colleague@company.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (emailError) setEmailError(null);
+                  if (inviteError) setInviteError(null);
+                  if (inviteSuccess) setInviteSuccess(null);
+                }}
+                disabled={isInviting}
+                error={emailError}
+              />
+            </div>
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              isLoading={isInviting}
+              className="mt-0 shrink-0"
             >
-              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Invite Form (owner only) */}
-        {isOwner ? (
-          <div className="border-b border-gray-200 px-6 py-4">
-            <form onSubmit={handleInvite} noValidate>
-              {inviteError ? (
-                <p
-                  className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-                  role="alert"
-                >
-                  {inviteError}
-                </p>
-              ) : null}
-
-              {inviteSuccess ? (
-                <p className="mb-3 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-                  {inviteSuccess}
-                </p>
-              ) : null}
-
-              <div className="flex gap-2">
-                <div className="min-w-0 flex-1">
-                  <label htmlFor="invite-email" className="sr-only">
-                    Email address
-                  </label>
-                  <input
-                    ref={inputRef}
-                    id="invite-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (emailError) setEmailError(null);
-                      if (inviteError) setInviteError(null);
-                      if (inviteSuccess) setInviteSuccess(null);
-                    }}
-                    placeholder="Invite by email"
-                    disabled={isInviting}
-                    aria-invalid={Boolean(emailError)}
-                    aria-describedby={emailError ? "invite-email-error" : undefined}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500 disabled:bg-gray-100"
-                  />
-                  {emailError ? (
-                    <p id="invite-email-error" className="mt-1 text-xs text-red-600">
-                      {emailError}
-                    </p>
-                  ) : null}
-                </div>
-                <button
-                  type="submit"
-                  disabled={isInviting}
-                  className="shrink-0 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
-                >
-                  {isInviting ? "Inviting…" : "Invite"}
-                </button>
-              </div>
-            </form>
+              Invite
+            </Button>
           </div>
-        ) : null}
+        </form>
+      ) : null}
 
-        {/* Members List */}
-        <div className="max-h-80 overflow-y-auto px-6 py-4">
-          {isLoadingMembers ? (
-            <p className="text-center text-sm text-gray-500">
-              Loading members…
-            </p>
-          ) : membersError ? (
-            <p
-              className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-              role="alert"
-            >
-              {membersError}
-            </p>
-          ) : members.length === 0 ? (
-            <p className="text-center text-sm text-gray-500">
-              No members yet.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {members.map((member) => (
-                <li key={member.id} className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-medium text-gray-700">
+      {/* Members List */}
+      <div className="max-h-72 overflow-y-auto space-y-3 pr-1">
+        {isLoadingMembers ? (
+          <div className="space-y-3 py-1">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3 flex-1">
+                  <Skeleton height={28} width={28} variant="circular" />
+                  <div className="space-y-1.5 flex-1 max-w-[200px]">
+                    <Skeleton height={14} className="w-full" />
+                    <Skeleton height={10} className="w-3/4" />
+                  </div>
+                </div>
+                <Skeleton height={20} width={50} />
+              </div>
+            ))}
+          </div>
+        ) : membersError ? (
+          <Toast variant="error" message={membersError} />
+        ) : members.length === 0 ? (
+          <p className="py-6 text-center text-xs text-gray-500">No members added yet.</p>
+        ) : (
+          <ul className="divide-y divide-gray-100">
+            {members.map((member) => (
+              <li key={member.id} className="flex items-center justify-between py-2.5">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-700 border border-gray-200">
                     {getInitials(member.user.name)}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-gray-900">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-medium text-gray-900">
                       {member.user.name}
                     </p>
-                    <p className="truncate text-xs text-gray-500">
+                    <p className="truncate text-[11px] text-gray-500">
                       {member.user.email}
                     </p>
                   </div>
-                  <RoleBadge role={member.role} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                </div>
+                <Badge variant={member.role === "OWNER" ? "owner" : "default"}>
+                  {member.role === "OWNER" ? "Owner" : "Member"}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 };
 

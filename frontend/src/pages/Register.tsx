@@ -2,6 +2,9 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { register } from "../api/auth";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import Toast from "../components/ui/Toast";
 import type { RegisterInput } from "../types/auth";
 import { parseApiError } from "../utils/parse-api-error";
 
@@ -77,7 +80,7 @@ const Register = () => {
         password: form.password,
       });
 
-      navigate("/login");
+      navigate("/login", { state: { registered: true } });
     } catch (error) {
       const { message, fieldErrors: serverFieldErrors } = parseApiError(error);
 
@@ -89,112 +92,73 @@ const Register = () => {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-gray-900">Create account</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Register to access the authentication sandbox.
+    <main className="relative flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-xl">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="flex h-7 w-7 items-center justify-center rounded bg-gray-900 text-white text-xs font-bold">
+            N
+          </div>
+          <span className="text-base font-bold tracking-tight text-gray-900">Nexus</span>
+        </div>
+
+        <h1 className="text-xl font-bold text-gray-900">Create account</h1>
+        <p className="mt-1 text-xs text-gray-600">
+          Register to start building on your infinite collaborative whiteboard.
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
-          {apiError ? (
-            <p
-              className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-              role="alert"
-            >
-              {apiError}
-            </p>
-          ) : null}
+          {apiError ? <Toast variant="error" message={apiError} /> : null}
 
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              autoComplete="name"
-              value={form.name}
-              onChange={(event) => updateField("name", event.target.value)}
-              aria-invalid={Boolean(fieldErrors.name)}
-              aria-describedby={fieldErrors.name ? "name-error" : undefined}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-            />
-            {fieldErrors.name ? (
-              <p id="name-error" className="mt-1 text-sm text-red-600">
-                {fieldErrors.name}
-              </p>
-            ) : null}
-          </div>
-
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={form.email}
-              onChange={(event) => updateField("email", event.target.value)}
-              aria-invalid={Boolean(fieldErrors.email)}
-              aria-describedby={fieldErrors.email ? "email-error" : undefined}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-            />
-            {fieldErrors.email ? (
-              <p id="email-error" className="mt-1 text-sm text-red-600">
-                {fieldErrors.email}
-              </p>
-            ) : null}
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              value={form.password}
-              onChange={(event) => updateField("password", event.target.value)}
-              aria-invalid={Boolean(fieldErrors.password)}
-              aria-describedby={
-                fieldErrors.password ? "password-error" : undefined
-              }
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
-            />
-            {fieldErrors.password ? (
-              <p id="password-error" className="mt-1 text-sm text-red-600">
-                {fieldErrors.password}
-              </p>
-            ) : null}
-          </div>
-
-          <button
-            type="submit"
+          <Input
+            label="Name"
+            id="name"
+            name="name"
+            type="text"
+            autoComplete="name"
+            value={form.name}
+            onChange={(event) => updateField("name", event.target.value)}
+            error={fieldErrors.name}
             disabled={isSubmitting}
-            className="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+          />
+
+          <Input
+            label="Email"
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={form.email}
+            onChange={(event) => updateField("email", event.target.value)}
+            error={fieldErrors.email}
+            disabled={isSubmitting}
+          />
+
+          <Input
+            label="Password"
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            value={form.password}
+            onChange={(event) => updateField("password", event.target.value)}
+            error={fieldErrors.password}
+            disabled={isSubmitting}
+          />
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="md"
+            isLoading={isSubmitting}
+            className="w-full mt-2"
           >
-            {isSubmitting ? "Creating account..." : "Register"}
-          </button>
+            Register
+          </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-xs text-gray-600">
           Already have an account?{" "}
-          <Link to="/login" className="font-medium text-gray-900 underline">
+          <Link to="/login" className="font-semibold text-gray-900 hover:underline">
             Sign in
           </Link>
         </p>
