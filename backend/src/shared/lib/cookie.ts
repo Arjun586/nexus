@@ -12,8 +12,8 @@ const getBaseRefreshTokenCookieOptions = (): CookieOptions => {
     return {
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? "none" : "lax",
-        path: "/auth",
+        sameSite: "lax",
+        path: "/",
     };
 };
 
