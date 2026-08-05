@@ -9,11 +9,20 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+    .split(",")
+    .map((url) => url.trim().replace(/\/$/, ""));
 
 app.use(
     cors({
-        origin: frontendUrl.includes(",") ? frontendUrl.split(",").map(url => url.trim()) : frontendUrl,
+        origin: (origin, callback) => {
+            if (!origin) return callback(null, true);
+            const cleanOrigin = origin.replace(/\/$/, "");
+            if (allowedOrigins.includes(cleanOrigin)) {
+                return callback(null, true);
+            }
+            return callback(null, cleanOrigin);
+        },
         credentials: true,
     })
 );
