@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import PageFallback from "../components/PageFallback";
 import ProtectedRoute from "../components/ProtectedRoute";
+import PublicOnlyRoute from "../components/PublicOnlyRoute";
 import AppLayout from "../layouts/AppLayout";
 import {
   LazyDashboard,
@@ -15,22 +16,26 @@ import {
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Navigate to="/login" replace />,
+    element: <Navigate to="/dashboard" replace />,
   },
   {
     path: "/login",
     element: (
-      <Suspense fallback={<PageFallback />}>
-        <LazyLogin />
-      </Suspense>
+      <PublicOnlyRoute>
+        <Suspense fallback={<PageFallback />}>
+          <LazyLogin />
+        </Suspense>
+      </PublicOnlyRoute>
     ),
   },
   {
     path: "/register",
     element: (
-      <Suspense fallback={<PageFallback />}>
-        <LazyRegister />
-      </Suspense>
+      <PublicOnlyRoute>
+        <Suspense fallback={<PageFallback />}>
+          <LazyRegister />
+        </Suspense>
+      </PublicOnlyRoute>
     ),
   },
   {
