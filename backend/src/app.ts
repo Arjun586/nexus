@@ -7,6 +7,8 @@ import routes from "./routes/index.js";
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
 
 app.use(
