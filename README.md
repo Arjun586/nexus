@@ -19,10 +19,7 @@ Completed milestones:
 - [x] Multi-user Whiteboard Synchronization
 - [x] Workspace Snapshot & Yjs State Persistence in PostgreSQL
 - [x] Professional Collapsible Sidebar & Application Shell (260px/64px sidebar, Ctrl+B shortcut, live connection status)
-
-Current work:
-- [ ] User Presence & Ghost Cursors (Phase 2)
-- [ ] Deploy MVP
+- [x] Deploy MVP
 
 
 ## Why Nexus?
@@ -42,20 +39,6 @@ Nexus is built to explore the challenges of real-time collaborative software. Th
 - **Real-time collaboration:** Multiple users drawing and editing on the same whiteboard simultaneously.
 - **Conflict resolution:** Concurrent edits stay consistent across all connected clients using CRDTs.
 - **Responsive experience:** The infinite canvas remains interactive while synchronizing changes in real time.
-
-Later phases will address scaling, presence systems, background processing, and distributed infrastructure.
-
-## MVP Philosophy
-
-The goal of Nexus is not to replicate every feature of Figma or Miro. The project follows an iterative approach:
-
-1. Build a minimal collaborative whiteboard.
-2. Ship a working MVP.
-3. Improve collaboration features.
-4. Optimize for scale.
-5. Add enterprise-level capabilities.
-
-Every phase should produce a deployable product.
 
 ## Architecture Overview
 
@@ -120,24 +103,6 @@ Yjs holds the live collaborative state as the single source of truth. PostgreSQL
     │ └── architecture/
     └── docker-compose.yml
 ```
-
-
-
-## Architecture Decisions
-
-Architectural decisions are documented as Architecture Decision Records (ADRs) under `docs/architecture/`. Each ADR captures the context, alternatives considered, and rationale behind a decision, so future contributors (including future me) understand why the system is structured the way it is rather than re-litigating settled choices.
-
-## Engineering Principles
-
-These principles guide development decisions across the project:
-
-- Ship before optimizing.
-- One source of truth for every piece of data.
-- Feature-first architecture over technical-layer organization.
-- Avoid premature abstraction.
-- Introduce infrastructure only when it solves a real problem.
-- Build production-quality code from day one, but only for the current scope.
-- Prefer simple solutions unless complexity is justified by measurable benefits.
 
 ## Development Environment
 
@@ -226,7 +191,7 @@ Goal: Build the smallest deployable collaborative whiteboard.
 - [x] Integrate Yjs
 - [x] Synchronize whiteboard between multiple users
 - [x] Save and load workspaces from PostgreSQL
-- [ ] Deploy MVP
+- [x] Deploy MVP
 
 ### Phase 2 — Collaboration Experience
 
