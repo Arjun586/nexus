@@ -121,9 +121,11 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
     );
   }
 
+  const licenseKey = import.meta.env.VITE_TLDRAW_LICENSE_KEY;
+
   return (
     <div className="tldraw__editor relative h-full w-full">
-      <Tldraw onMount={handleMount} />
+      <Tldraw licenseKey={licenseKey} onMount={handleMount} />
     </div>
   );
 };
