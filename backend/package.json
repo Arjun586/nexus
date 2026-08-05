@@ -7,7 +7,10 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@hocuspocus/server": "^4.4.0",

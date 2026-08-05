@@ -11,7 +11,8 @@ export interface CollaborationState {
   status: ConnectionStatus;
 }
 
-const HOCUSPOCUS_WS_URL = "ws://localhost:1234";
+const HOCUSPOCUS_WS_URL =
+  import.meta.env.VITE_WS_URL || "ws://localhost:3000";
 
 /**
  * Connects to the Hocuspocus server for a given workspace.
