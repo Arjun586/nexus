@@ -8,7 +8,7 @@ export const REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
 
 const getBaseRefreshTokenCookieOptions = (): CookieOptions => {
     const isProduction = process.env.NODE_ENV === "production";
-
+    console.log('[cookie debug] NODE_ENV:', JSON.stringify(process.env.NODE_ENV), 'isProduction:', isProduction);
     return {
         httpOnly: true,
         secure: isProduction,
