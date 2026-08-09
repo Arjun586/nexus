@@ -19,6 +19,7 @@ Completed milestones:
 - [x] Multi-user Whiteboard Synchronization
 - [x] Workspace Snapshot & Yjs State Persistence in PostgreSQL
 - [x] Professional Collapsible Sidebar & Application Shell (260px/64px sidebar, Ctrl+B shortcut, live connection status)
+- [x] Add Rate Limiting
 - [x] Deploy MVP
 
 
@@ -84,16 +85,6 @@ Yjs holds the live collaborative state as the single source of truth. PostgreSQL
 - Argon2 (password hashing)
 - JSON Web Token (JWT)
 - Cookie Parser
-
-### Planned Infrastructure
-
-- BullMQ (background job processing)
-- Monitoring and observability tooling
-- Metrics collection
-- PNG/PDF export services
-- Horizontal WebSocket scaling
-- Framer Motion (UI transitions)
-- React Virtuoso (list virtualization)
 
 ## Folder Structure
 ```nexus/
@@ -234,8 +225,8 @@ Goal: Introduce enterprise-level functionality.
 The first release includes only the features required to demonstrate a working collaborative whiteboard engine.
 
 **Included**
-- User authentication (implemented)
-- Workspace creation (next feature)
+- User authentication
+- Workspace creation 
 - Shared infinite canvas
 - Drawing and shape creation
 - Real-time synchronization
