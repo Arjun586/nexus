@@ -35,8 +35,6 @@ const refresh = asyncHandler(async (req: Request, res: Response): Promise<void> 
 
     const data = await authService.refresh(refreshToken);
 
-    res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, getRefreshTokenCookieOptions());
-
     res.status(200).json({
         success: true,
         data,
