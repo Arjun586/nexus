@@ -21,6 +21,28 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
     setEditor(mountedEditor);
   }, []);
 
+  // Synchronize tldraw dark mode with Nexus application theme
+  useEffect(() => {
+    if (!editor) return;
+
+    const syncColorMode = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+      try {
+        if (typeof (editor.user as any)?.setColorMode === "function") {
+          (editor.user as any).setColorMode(isDark ? "dark" : "light");
+        } else if (typeof (editor.user as any)?.updateUserPreferences === "function") {
+          (editor.user as any).updateUserPreferences({ colorMode: isDark ? "dark" : "light" });
+        }
+      } catch {
+        // Safe fallback
+      }
+    };
+
+    syncColorMode();
+    window.addEventListener("nexus-theme-change", syncColorMode);
+    return () => window.removeEventListener("nexus-theme-change", syncColorMode);
+  }, [editor]);
+
   useEffect(() => {
     if (!editor || !collabState) {
       return;

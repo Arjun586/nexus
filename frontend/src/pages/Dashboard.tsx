@@ -47,11 +47,12 @@ const cardGlyphs = [
       strokeWidth="1.6"
       viewBox="0 0 24 24"
       width="20"
+      className="text-secondary"
     >
-      <circle className="fill-[#315FE9]/10" cx="12" cy="5" r="2.5" />
-      <circle className="fill-[#315FE9]/10" cx="5" cy="18" r="2.5" />
-      <circle className="fill-[#315FE9]/10" cx="19" cy="18" r="2.5" />
-      <path d="M10.5 7L6.5 15.5M13.5 7l4 8.5M7.5 18h9" stroke="#6D707B" />
+      <circle className="fill-primary/20" cx="12" cy="5" r="2.5" />
+      <circle className="fill-primary/20" cx="5" cy="18" r="2.5" />
+      <circle className="fill-primary/20" cx="19" cy="18" r="2.5" />
+      <path d="M10.5 7L6.5 15.5M13.5 7l4 8.5M7.5 18h9" stroke="currentColor" />
     </svg>
   ),
   // Glyph 2: Isometric cube outline icon
@@ -66,9 +67,10 @@ const cardGlyphs = [
       strokeWidth="1.6"
       viewBox="0 0 24 24"
       width="20"
+      className="text-secondary"
     >
       <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" />
-      <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" stroke="#6D707B" />
+      <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" stroke="currentColor" />
     </svg>
   ),
   // Glyph 3: Overlapping circular rings icon
@@ -83,9 +85,10 @@ const cardGlyphs = [
       strokeWidth="1.6"
       viewBox="0 0 24 24"
       width="20"
+      className="text-secondary"
     >
       <circle cx="9" cy="12" r="5.5" />
-      <circle cx="15" cy="12" r="5.5" stroke="#6D707B" />
+      <circle cx="15" cy="12" r="5.5" stroke="currentColor" />
     </svg>
   ),
   // Glyph 4: 4-square interconnected diagram node glyph
@@ -100,12 +103,13 @@ const cardGlyphs = [
       strokeWidth="1.6"
       viewBox="0 0 24 24"
       width="20"
+      className="text-secondary"
     >
       <rect height="5" rx="1" width="5" x="3" y="3" />
-      <rect height="5" rx="1" stroke="#6D707B" width="5" x="16" y="3" />
-      <rect height="5" rx="1" stroke="#6D707B" width="5" x="3" y="16" />
+      <rect height="5" rx="1" stroke="currentColor" width="5" x="16" y="3" />
+      <rect height="5" rx="1" stroke="currentColor" width="5" x="3" y="16" />
       <rect height="5" rx="1" width="5" x="16" y="16" />
-      <path d="M8 5.5h8M8 18.5h8M5.5 8v8M18.5 8v8" stroke="#6D707B" strokeDasharray="1.5 1.5" />
+      <path d="M8 5.5h8M8 18.5h8M5.5 8v8M18.5 8v8" stroke="currentColor" strokeDasharray="1.5 1.5" />
     </svg>
   ),
 ];
@@ -196,7 +200,7 @@ const Dashboard = () => {
       {/* Header Row */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-10">
         <div>
-          <h1 className="font-display-editorial text-[38px] sm:text-[42px] leading-[48px] font-normal tracking-[-0.02em] text-[#22242B]">
+          <h1 className="font-display-editorial text-[38px] sm:text-[42px] leading-[48px] font-normal tracking-[-0.02em] text-on-surface">
             Workspaces
           </h1>
         </div>
@@ -211,7 +215,7 @@ const Dashboard = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search workspaces..."
-              className="h-[42px] w-56 sm:w-64 pl-9 pr-3 rounded-[10px] bg-surface-container-lowest text-on-surface font-body-sm text-body-sm placeholder:text-outline border border-[#E5E5E2] focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all"
+              className="h-[42px] w-56 sm:w-64 pl-9 pr-3 rounded-[10px] bg-surface-container-lowest text-on-surface font-body-sm text-body-sm placeholder:text-outline border border-outline-variant focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
             />
           </div>
 
@@ -223,7 +227,7 @@ const Dashboard = () => {
               setCreateApiError(null);
               setCreateModalOpen(true);
             }}
-            className="h-[42px] px-4 rounded-[10px] bg-[#315FE9] hover:bg-[#254EC8] text-white font-label-md text-label-md font-medium tracking-tight flex items-center gap-1.5 transition-colors shadow-sm active:scale-[0.98] cursor-pointer"
+            className="h-[42px] px-4 rounded-[10px] bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-medium tracking-tight flex items-center gap-1.5 transition-colors shadow-sm active:scale-[0.98] cursor-pointer"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
             <span>New Workspace</span>
@@ -258,7 +262,7 @@ const Dashboard = () => {
             <Skeleton height={24} className="mb-4 w-44 rounded-md" />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[18px]">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-44 rounded-[12px] bg-white border border-[#E5E5E2] p-[22px] flex flex-col justify-between">
+                <div key={i} className="h-44 rounded-[12px] bg-surface-container-lowest border border-outline-variant p-[22px] flex flex-col justify-between">
                   <div className="flex items-start justify-between">
                     <Skeleton height={36} width={36} className="rounded-lg" />
                     <Skeleton height={18} width={18} className="rounded-full" />
@@ -281,18 +285,18 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2
                   id="owned-workspaces-heading"
-                  className="font-headline-md text-[20px] leading-[28px] font-medium tracking-tight text-[#22242B]"
+                  className="font-headline-md text-[20px] leading-[28px] font-medium tracking-tight text-on-surface"
                 >
                   Owned Workspaces
                 </h2>
               </div>
 
               {ownedWorkspaces.length === 0 ? (
-                <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-white p-12 text-center">
-                  <div className="w-10 h-10 rounded-full bg-[#EEF2FF] text-[#315FE9] flex items-center justify-center mx-auto mb-3">
+                <div className="rounded-[12px] border border-dashed border-outline-variant bg-surface-container-lowest p-12 text-center">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3">
                     <span className="material-symbols-outlined text-[20px]">draw</span>
                   </div>
-                  <h3 className="font-headline-sm text-base font-semibold text-[#22242B]">
+                  <h3 className="font-headline-sm text-base font-semibold text-on-surface">
                     No owned workspaces
                   </h3>
                   <p className="mt-1 text-xs text-secondary max-w-sm mx-auto">
@@ -306,7 +310,7 @@ const Dashboard = () => {
                       setCreateApiError(null);
                       setCreateModalOpen(true);
                     }}
-                    className="mt-4 px-4 py-2 rounded-lg bg-[#315FE9] text-white font-label-md text-xs font-medium hover:bg-[#254EC8] transition-colors"
+                    className="mt-4 px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-xs font-medium hover:bg-primary-container transition-colors"
                   >
                     Create Workspace
                   </button>
@@ -318,14 +322,14 @@ const Dashboard = () => {
                     return (
                       <div
                         key={workspace.id}
-                        className="group relative bg-[#FFFFFF] border border-[#E5E5E2] hover:border-[#CBD5E1] rounded-[12px] p-[22px] transition-all duration-200 hover:-translate-y-[2px] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
+                        className="group relative bg-surface-container-lowest border border-outline-variant hover:border-outline rounded-[12px] p-[22px] transition-all duration-200 hover:-translate-y-[2px] hover:shadow-lg dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
                       >
                         <Link
                           to={`/workspaces/${workspace.id}`}
                           className="block"
                         >
                           <div className="flex items-start justify-between">
-                            <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] flex items-center justify-center text-[#315FE9]">
+                            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                               {glyph}
                             </div>
                             <span className="material-symbols-outlined text-[18px] text-transparent group-hover:text-outline transition-colors">
@@ -334,7 +338,7 @@ const Dashboard = () => {
                           </div>
 
                           <div className="mt-5 mb-7">
-                            <h3 className="font-headline-sm text-[17px] font-semibold text-[#22242B] group-hover:text-[#315FE9] transition-colors leading-snug truncate">
+                            <h3 className="font-headline-sm text-[17px] font-semibold text-on-surface group-hover:text-primary transition-colors leading-snug truncate">
                               {workspace.name}
                             </h3>
                           </div>
@@ -346,7 +350,7 @@ const Dashboard = () => {
                               ]}
                               size="sm"
                             />
-                            <span className="font-label-sm text-[13px] text-[#6D707B]">
+                            <span className="font-label-sm text-[13px] text-secondary">
                               {formatTimeAgo(workspace.createdAt)}
                             </span>
                           </div>
@@ -362,7 +366,7 @@ const Dashboard = () => {
                             }}
                             title={`Delete ${workspace.name}`}
                             aria-label={`Delete ${workspace.name}`}
-                            className="absolute top-4 right-10 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 text-outline hover:text-red-600 transition-all"
+                            className="absolute top-4 right-10 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-error-container/40 text-outline hover:text-error transition-all"
                           >
                             <span className="material-symbols-outlined text-[16px]">delete</span>
                           </button>
@@ -381,14 +385,14 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2
                   id="shared-workspaces-heading"
-                  className="font-headline-md text-[20px] leading-[28px] font-medium tracking-tight text-[#22242B]"
+                  className="font-headline-md text-[20px] leading-[28px] font-medium tracking-tight text-on-surface"
                 >
                   Shared Workspaces
                 </h2>
               </div>
 
               {sharedWorkspaces.length === 0 ? (
-                <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-white p-8 text-center">
+                <div className="rounded-[12px] border border-dashed border-outline-variant bg-surface-container-lowest p-8 text-center">
                   <p className="text-xs text-secondary">
                     No workspaces shared with you yet.
                   </p>
@@ -401,10 +405,10 @@ const Dashboard = () => {
                       <Link
                         key={workspace.id}
                         to={`/workspaces/${workspace.id}`}
-                        className="group block bg-[#FFFFFF] border border-[#E5E5E2] hover:border-[#CBD5E1] rounded-[12px] p-[22px] transition-all duration-200 hover:-translate-y-[2px] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
+                        className="group block bg-surface-container-lowest border border-outline-variant hover:border-outline rounded-[12px] p-[22px] transition-all duration-200 hover:-translate-y-[2px] hover:shadow-lg dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
                       >
                         <div className="flex items-start justify-between">
-                          <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] flex items-center justify-center text-[#315FE9]">
+                          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                             {glyph}
                           </div>
                           <span className="material-symbols-outlined text-[18px] text-transparent group-hover:text-outline transition-colors">
@@ -413,18 +417,18 @@ const Dashboard = () => {
                         </div>
 
                         <div className="mt-5 mb-7">
-                          <h3 className="font-headline-sm text-[17px] font-semibold text-[#22242B] group-hover:text-[#315FE9] transition-colors leading-snug truncate">
+                          <h3 className="font-headline-sm text-[17px] font-semibold text-on-surface group-hover:text-primary transition-colors leading-snug truncate">
                             {workspace.name}
                           </h3>
                         </div>
 
                         <div className="flex items-center justify-between pt-2">
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="font-label-sm text-[13px] text-[#6D707B] truncate">
+                            <span className="font-label-sm text-[13px] text-secondary truncate">
                               Shared workspace
                             </span>
                           </div>
-                          <span className="font-label-sm text-[13px] text-[#6D707B] shrink-0">
+                          <span className="font-label-sm text-[13px] text-secondary shrink-0">
                             {formatTimeAgo(workspace.createdAt)}
                           </span>
                         </div>

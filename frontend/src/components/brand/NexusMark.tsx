@@ -43,7 +43,7 @@ export const NexusMark = ({
         y1="8"
         x2="9"
         y2="31"
-        stroke="#315fe9"
+        stroke="var(--color-primary-container, #315fe9)"
         strokeWidth="1.5"
         strokeLinecap="round"
       />
@@ -52,7 +52,7 @@ export const NexusMark = ({
         y1="8"
         x2="35"
         y2="31"
-        stroke="#315fe9"
+        stroke="var(--color-primary-container, #315fe9)"
         strokeWidth="1.5"
         strokeLinecap="round"
       />
@@ -61,7 +61,7 @@ export const NexusMark = ({
         y1="31"
         x2="35"
         y2="31"
-        stroke="#315fe9"
+        stroke="var(--color-primary-container, #315fe9)"
         strokeWidth="1.5"
         strokeLinecap="round"
       />
@@ -72,7 +72,7 @@ export const NexusMark = ({
         y1="8"
         x2="22"
         y2="23.3"
-        stroke="#c4c5d7"
+        stroke="var(--color-outline-variant, #c4c5d7)"
         strokeWidth="1"
       />
       <line
@@ -80,7 +80,7 @@ export const NexusMark = ({
         y1="31"
         x2="22"
         y2="23.3"
-        stroke="#c4c5d7"
+        stroke="var(--color-outline-variant, #c4c5d7)"
         strokeWidth="1"
       />
       <line
@@ -88,30 +88,30 @@ export const NexusMark = ({
         y1="31"
         x2="22"
         y2="23.3"
-        stroke="#c4c5d7"
+        stroke="var(--color-outline-variant, #c4c5d7)"
         strokeWidth="1"
       />
 
       {/* Node vertices */}
-      <circle cx="22" cy="8" r="4.25" fill="#315fe9" />
-      <circle cx="22" cy="8" r="1.75" fill="#faf8ff" />
+      <circle cx="22" cy="8" r="4.25" fill="var(--color-primary-container, #315fe9)" />
+      <circle cx="22" cy="8" r="1.75" fill="var(--color-surface, #faf8ff)" />
       <circle
         cx="9"
         cy="31"
         r="3.75"
-        fill="#faf8ff"
-        stroke="#315fe9"
+        fill="var(--color-surface, #faf8ff)"
+        stroke="var(--color-primary-container, #315fe9)"
         strokeWidth="1.5"
       />
       <circle
         cx="35"
         cy="31"
         r="3.75"
-        fill="#faf8ff"
-        stroke="#315fe9"
+        fill="var(--color-surface, #faf8ff)"
+        stroke="var(--color-primary-container, #315fe9)"
         strokeWidth="1.5"
       />
-      <circle cx="22" cy="23.3" r="2.25" fill="#315fe9" />
+      <circle cx="22" cy="23.3" r="2.25" fill="var(--color-primary-container, #315fe9)" />
     </svg>
   );
 };

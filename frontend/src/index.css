@@ -69,6 +69,80 @@
   --font-code-sm: 'JetBrains Mono', monospace;
 }
 
+html.dark,
+.dark {
+  --color-primary: #4a7cfb;
+  --color-primary-container: #234bb5;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #d6e1ff;
+  --color-on-primary-fixed: #001550;
+  --color-on-primary-fixed-variant: #003ab3;
+  --color-primary-fixed: #2b3b64;
+  --color-primary-fixed-dim: #1e2a4a;
+
+  --color-surface: #0e0f14;
+  --color-surface-bright: #1c1d27;
+  --color-surface-dim: #090a0d;
+  --color-surface-variant: #1a1c26;
+  --color-surface-tint: #85a7ff;
+  --color-surface-container-lowest: #13141b;
+  --color-surface-container-low: #171822;
+  --color-surface-container: #1d1f2b;
+  --color-surface-container-high: #242635;
+  --color-surface-container-highest: #2b2e40;
+
+  --color-on-surface: #f2f2fa;
+  --color-on-surface-variant: #9ea1b5;
+  --color-outline: #6c7086;
+  --color-outline-variant: #282a39;
+
+  --color-secondary: #9ea1b5;
+  --color-secondary-container: #222533;
+  --color-secondary-fixed: #222533;
+  --color-secondary-fixed-dim: #1a1d29;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #cfd2e3;
+  --color-on-secondary-fixed: #f2f2fa;
+  --color-on-secondary-fixed-variant: #9ea1b5;
+
+  --color-tertiary: #a4a8bc;
+  --color-tertiary-container: #26293a;
+  --color-tertiary-fixed: #26293a;
+  --color-tertiary-fixed-dim: #1d202e;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #d3d7eb;
+  --color-on-tertiary-fixed: #f2f2fa;
+  --color-on-tertiary-fixed-variant: #a4a8bc;
+
+  --color-background: #0e0f14;
+  --color-on-background: #f2f2fa;
+  --color-inverse-surface: #f2f2fa;
+  --color-inverse-on-surface: #13141b;
+  --color-inverse-primary: #0044cf;
+
+  --color-error: #ffb4ab;
+  --color-error-container: #93000a;
+  --color-on-error: #690005;
+  --color-on-error-container: #ffdad6;
+
+  color-scheme: dark;
+}
+
+/* View Transitions Circular Theme Reveal */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 99999;
+}
+
 @layer base {
   html, body {
     margin: 0;

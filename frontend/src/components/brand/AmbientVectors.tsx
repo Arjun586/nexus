@@ -70,7 +70,7 @@ export const AmbientVectors = () => {
             cx="70"
             cy="120"
             r="3.5"
-            fill="#faf8ff"
+            fill="var(--color-surface, #faf8ff)"
             stroke="#315fe9"
             strokeWidth="1.5"
           />
@@ -79,7 +79,7 @@ export const AmbientVectors = () => {
             cx="260"
             cy="190"
             r="3"
-            fill="#faf8ff"
+            fill="var(--color-surface, #faf8ff)"
             stroke="#315fe9"
             strokeWidth="1.5"
           />
@@ -87,7 +87,7 @@ export const AmbientVectors = () => {
             cx="140"
             cy="250"
             r="3.5"
-            fill="#faf8ff"
+            fill="var(--color-surface, #faf8ff)"
             stroke="#747686"
             strokeWidth="1.5"
           />
@@ -227,7 +227,7 @@ export const AmbientVectors = () => {
             cx="250"
             cy="90"
             r="4"
-            fill="#faf8ff"
+            fill="var(--color-surface, #faf8ff)"
             stroke="#315fe9"
             strokeWidth="1.5"
           />
@@ -272,7 +272,7 @@ export const AmbientVectors = () => {
             cx="80"
             cy="80"
             r="3"
-            fill="#faf8ff"
+            fill="var(--color-surface, #faf8ff)"
             stroke="#315fe9"
             strokeWidth="1.5"
           />
@@ -290,7 +290,7 @@ export const AmbientVectors = () => {
             cx="160"
             cy="30"
             r="2.5"
-            fill="#faf8ff"
+            fill="var(--color-surface, #faf8ff)"
             stroke="#315fe9"
             strokeWidth="1"
           />

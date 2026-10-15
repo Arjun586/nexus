@@ -10,6 +10,7 @@ import Toast from "../components/ui/Toast";
 import { clearSession } from "../session/restore-session";
 import { getUser } from "../session/user";
 import { parseApiError } from "../utils/parse-api-error";
+import { useTheme } from "../utils/theme";
 
 const STORAGE_KEY_SIDEBAR = "nexus-sidebar-collapsed";
 
@@ -24,6 +25,7 @@ const AppLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getUser();
+  const { isDark, toggleTheme } = useTheme();
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isLoadingWorkspaces, setIsLoadingWorkspaces] = useState(true);
@@ -294,18 +296,38 @@ const AppLayout = () => {
 
         {/* Bottom Section - Theme & User Profile */}
         <div className="p-2.5 border-t border-outline-variant flex flex-col gap-1.5 bg-surface-container-low">
-          {!sidebarCollapsed ? (
-            <div className="flex items-center justify-between px-3 py-1 text-on-surface-variant">
-              <span className="font-label-sm text-label-sm text-outline">Theme</span>
+          {sidebarCollapsed ? (
+            <div className="flex items-center justify-center py-1">
               <button
                 type="button"
-                aria-label="Toggle theme"
-                className="flex items-center justify-center p-1.5 rounded-lg hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors"
+                onClick={toggleTheme}
+                aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
+                title={`Switch to ${isDark ? "light" : "dark"} theme`}
+                className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-all duration-150 cursor-pointer active:scale-95 group"
               >
-                <span className="material-symbols-outlined text-[18px]">light_mode</span>
+                <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:rotate-45">
+                  {isDark ? "light_mode" : "dark_mode"}
+                </span>
               </button>
             </div>
-          ) : null}
+          ) : (
+            <div className="flex items-center justify-between px-3 py-1 text-on-surface-variant">
+              <span className="font-label-sm text-label-sm text-outline">
+                {isDark ? "Dark theme" : "Light theme"}
+              </span>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
+                title={`Switch to ${isDark ? "light" : "dark"} theme`}
+                className="flex items-center justify-center p-1.5 rounded-lg hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-all duration-150 cursor-pointer active:scale-90 group"
+              >
+                <span className="material-symbols-outlined text-[18px] transition-transform duration-300 group-hover:rotate-45">
+                  {isDark ? "light_mode" : "dark_mode"}
+                </span>
+              </button>
+            </div>
+          )}
 
           {logoutError ? <Toast variant="error" message={logoutError} className="mb-1" /> : null}
 

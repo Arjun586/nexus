@@ -10,15 +10,15 @@ export const AuthLoading = ({
   subtext = "Preparing your workspace",
 }: AuthLoadingProps) => {
   return (
-    <main className="w-full min-h-screen bg-surface flex items-center justify-center p-4 selection:bg-primary selection:text-on-primary">
-      <div className="flex flex-col w-full relative min-h-[920px] items-center justify-center overflow-hidden select-none">
+    <main className="w-screen h-screen h-[100dvh] max-h-screen overflow-hidden bg-surface flex items-center justify-center p-4 selection:bg-primary selection:text-on-primary">
+      <div className="flex flex-col w-full h-full relative items-center justify-center overflow-hidden select-none">
         {/* LAYER 1: SKELETON REHYDRATION PREVIEW (Faint architectural ghost layout ~7% opacity) */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 pointer-events-none flex flex-col opacity-[0.07] transition-opacity duration-1000"
+          className="absolute inset-0 pointer-events-none flex flex-col opacity-[0.07] transition-opacity duration-1000 overflow-hidden"
         >
           {/* Faint Top Shell Header Bar */}
-          <div className="w-full h-14 bg-on-surface flex items-center justify-between px-8">
+          <div className="w-full h-14 bg-on-surface flex items-center justify-between px-8 shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-5 h-5 rounded-sm bg-on-surface-variant" />
               <div className="w-24 h-2.5 rounded-full bg-on-surface-variant" />
@@ -29,9 +29,9 @@ export const AuthLoading = ({
             </div>
           </div>
           {/* Faint Workspace Frame */}
-          <div className="flex-1 flex w-full">
+          <div className="flex-1 flex w-full min-h-0 overflow-hidden">
             {/* Faint Left Navigation Rail */}
-            <div className="w-60 h-full bg-on-surface flex flex-col p-6 gap-5">
+            <div className="w-60 h-full bg-on-surface flex flex-col p-6 gap-5 shrink-0">
               <div className="w-32 h-3 rounded-full bg-surface" />
               <div className="w-24 h-2.5 rounded-full bg-surface opacity-75" />
               <div className="w-28 h-2.5 rounded-full bg-surface opacity-60" />
@@ -41,12 +41,12 @@ export const AuthLoading = ({
               <div className="w-24 h-2.5 rounded-full bg-surface opacity-50" />
             </div>
             {/* Faint Canvas Structural Areas */}
-            <div className="flex-1 p-10 flex flex-col gap-8">
-              <div className="w-72 h-6 rounded-md bg-on-surface opacity-60" />
-              <div className="grid grid-cols-12 gap-8 w-full flex-1">
-                <div className="col-span-8 rounded-xl bg-on-surface opacity-40 h-80" />
-                <div className="col-span-4 rounded-xl bg-on-surface opacity-30 h-80" />
-                <div className="col-span-12 rounded-xl bg-on-surface opacity-25 h-56" />
+            <div className="flex-1 p-10 flex flex-col gap-8 min-h-0 overflow-hidden">
+              <div className="w-72 h-6 rounded-md bg-on-surface opacity-60 shrink-0" />
+              <div className="grid grid-cols-12 gap-8 w-full flex-1 min-h-0">
+                <div className="col-span-8 rounded-xl bg-on-surface opacity-40 min-h-0 h-full" />
+                <div className="col-span-4 rounded-xl bg-on-surface opacity-30 min-h-0 h-full" />
+                <div className="col-span-12 rounded-xl bg-on-surface opacity-25 min-h-0 h-24" />
               </div>
             </div>
           </div>
