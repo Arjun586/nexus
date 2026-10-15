@@ -2,8 +2,9 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { register } from "../api/auth";
+import AmbientVectors from "../components/brand/AmbientVectors";
+import NexusMark from "../components/brand/NexusMark";
 import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
 import Toast from "../components/ui/Toast";
 import type { RegisterInput } from "../types/auth";
 import { parseApiError } from "../utils/parse-api-error";
@@ -41,6 +42,7 @@ const Register = () => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const updateField = (field: RegisterFields, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -92,76 +94,186 @@ const Register = () => {
   };
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-xl">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="flex h-7 w-7 items-center justify-center rounded bg-gray-900 text-white text-xs font-bold">
-            N
+    <main className="w-full min-h-screen flex-1 flex flex-col justify-center items-center px-4 py-10 bg-background selection:bg-primary selection:text-on-primary relative overflow-hidden">
+      <div className="flex flex-col w-full relative min-h-[840px] items-center justify-center">
+        {/* Ambient floating geometric vectors */}
+        <AmbientVectors />
+
+        {/* STATIONARY AUTHENTICATION CARD */}
+        <div className="relative z-10 w-full max-w-[440px] -translate-y-4 sm:-translate-y-8 transition-none">
+          <div className="bg-surface-container-lowest rounded-xl p-[36px] shadow-[0_8px_32px_-8px_rgba(25,27,34,0.06),0_1px_3px_0_rgba(25,27,34,0.04)] outline outline-1 outline-surface-container-highest">
+            {/* Card Brand Block */}
+            <div className="flex flex-col items-center justify-center text-center">
+              {/* Nexus Geometric Mark */}
+              <div className="w-11 h-11 flex items-center justify-center text-primary mb-3.5">
+                <NexusMark size={44} />
+              </div>
+
+              {/* Wordmark */}
+              <span className="font-headline-md text-headline-md tracking-tight text-on-surface lowercase leading-none mb-6">
+                nexus
+              </span>
+
+              {/* Heading */}
+              <h1 className="font-display-editorial text-[30px] leading-[38px] text-on-surface font-normal tracking-tight mb-2.5">
+                Create your account
+              </h1>
+
+              {/* Supporting text */}
+              <p className="font-body-md text-body-md text-secondary leading-relaxed max-w-[340px]">
+                Join your team on collaborative boards and infinite whiteboards
+              </p>
+            </div>
+
+            {apiError ? <Toast variant="error" message={apiError} className="mt-4" /> : null}
+
+            {/* Form */}
+            <form className="mt-8 flex flex-col space-y-4" onSubmit={handleSubmit} noValidate>
+              {/* Name Field */}
+              <div className="flex flex-col space-y-1.5 text-left">
+                <label
+                  className="font-label-md text-label-md text-on-surface font-medium"
+                  htmlFor="full-name"
+                >
+                  Full name
+                </label>
+                <div className="relative">
+                  <input
+                    id="full-name"
+                    name="name"
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Alex Chen"
+                    required
+                    disabled={isSubmitting}
+                    value={form.name}
+                    onChange={(event) => updateField("name", event.target.value)}
+                    className={`w-full h-12 rounded-lg bg-surface-container-lowest px-4 text-on-surface text-body-sm font-body-sm placeholder:text-outline-variant outline outline-1 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${
+                      fieldErrors.name
+                        ? "outline-error ring-1 ring-error"
+                        : "outline-surface-container-highest"
+                    }`}
+                  />
+                </div>
+                {fieldErrors.name ? (
+                  <p className="mt-1 font-body-sm text-xs font-medium text-error" role="alert">
+                    {fieldErrors.name}
+                  </p>
+                ) : null}
+              </div>
+
+              {/* Email Field */}
+              <div className="flex flex-col space-y-1.5 text-left">
+                <label
+                  className="font-label-md text-label-md text-on-surface font-medium"
+                  htmlFor="work-email"
+                >
+                  Work email
+                </label>
+                <div className="relative">
+                  <input
+                    id="work-email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="name@company.com"
+                    required
+                    disabled={isSubmitting}
+                    value={form.email}
+                    onChange={(event) => updateField("email", event.target.value)}
+                    className={`w-full h-12 rounded-lg bg-surface-container-lowest px-4 text-on-surface text-body-sm font-body-sm placeholder:text-outline-variant outline outline-1 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${
+                      fieldErrors.email
+                        ? "outline-error ring-1 ring-error"
+                        : "outline-surface-container-highest"
+                    }`}
+                  />
+                </div>
+                {fieldErrors.email ? (
+                  <p className="mt-1 font-body-sm text-xs font-medium text-error" role="alert">
+                    {fieldErrors.email}
+                  </p>
+                ) : null}
+              </div>
+
+              {/* Password Field */}
+              <div className="flex flex-col space-y-1.5 text-left">
+                <div className="flex items-center justify-between">
+                  <label
+                    className="font-label-md text-label-md text-on-surface font-medium"
+                    htmlFor="password"
+                  >
+                    Password
+                  </label>
+                  <Link
+                    to="/login"
+                    className="font-body-sm text-xs text-primary hover:underline hover:text-primary-container transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded-sm"
+                  >
+                    Already registered?
+                  </Link>
+                </div>
+
+                <div className="relative flex items-center">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder="••••••••••••"
+                    required
+                    disabled={isSubmitting}
+                    value={form.password}
+                    onChange={(event) => updateField("password", event.target.value)}
+                    className={`w-full h-12 rounded-lg bg-surface-container-lowest pl-4 pr-11 text-on-surface text-body-sm font-body-sm placeholder:text-outline-variant outline outline-1 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${
+                      fieldErrors.password
+                        ? "outline-error ring-1 ring-error"
+                        : "outline-surface-container-highest"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label="Toggle password visibility"
+                    className="absolute right-3.5 text-secondary hover:text-on-surface transition-colors p-1 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary rounded"
+                  >
+                    <span className="material-symbols-outlined text-[19px]">
+                      {showPassword ? "visibility_off" : "visibility"}
+                    </span>
+                  </button>
+                </div>
+                {fieldErrors.password ? (
+                  <p className="mt-1 font-body-sm text-xs font-medium text-error" role="alert">
+                    {fieldErrors.password}
+                  </p>
+                ) : null}
+              </div>
+
+              {/* Primary Action Button */}
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  isLoading={isSubmitting}
+                  className="w-full h-12 rounded-lg font-label-md text-label-md font-medium tracking-tight"
+                  rightIcon={
+                    <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  }
+                >
+                  Create Account
+                </Button>
+              </div>
+            </form>
+
+            {/* Bottom editorial divider detail */}
+            <div className="mt-8 pt-5 flex items-center justify-center gap-2 border-t border-surface-container-high/60">
+              <span className="w-1.5 h-1.5 rounded-full bg-outline-variant" />
+              <span className="font-code-sm text-code-sm text-secondary">
+                nexus strategic workspace
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-outline-variant" />
+            </div>
           </div>
-          <span className="text-base font-bold tracking-tight text-gray-900">Nexus</span>
         </div>
-
-        <h1 className="text-xl font-bold text-gray-900">Create account</h1>
-        <p className="mt-1 text-xs text-gray-600">
-          Register to start building on your infinite collaborative whiteboard.
-        </p>
-
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
-          {apiError ? <Toast variant="error" message={apiError} /> : null}
-
-          <Input
-            label="Name"
-            id="name"
-            name="name"
-            type="text"
-            autoComplete="name"
-            value={form.name}
-            onChange={(event) => updateField("name", event.target.value)}
-            error={fieldErrors.name}
-            disabled={isSubmitting}
-          />
-
-          <Input
-            label="Email"
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            value={form.email}
-            onChange={(event) => updateField("email", event.target.value)}
-            error={fieldErrors.email}
-            disabled={isSubmitting}
-          />
-
-          <Input
-            label="Password"
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            value={form.password}
-            onChange={(event) => updateField("password", event.target.value)}
-            error={fieldErrors.password}
-            disabled={isSubmitting}
-          />
-
-          <Button
-            type="submit"
-            variant="primary"
-            size="md"
-            isLoading={isSubmitting}
-            className="w-full mt-2"
-          >
-            Register
-          </Button>
-        </form>
-
-        <p className="mt-6 text-center text-xs text-gray-600">
-          Already have an account?{" "}
-          <Link to="/login" className="font-semibold text-gray-900 hover:underline">
-            Sign in
-          </Link>
-        </p>
       </div>
     </main>
   );

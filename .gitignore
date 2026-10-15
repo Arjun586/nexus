@@ -25,3 +25,6 @@ Thumbs.db
 
 # Misc
 coverage/
+
+dataflow/
+architecture

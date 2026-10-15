@@ -1,11 +1,162 @@
 @import "tailwindcss";
 
+@theme {
+  --color-primary: #0044cf;
+  --color-primary-container: #315fe9;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #eaecff;
+  --color-on-primary-fixed: #001550;
+  --color-on-primary-fixed-variant: #003ab3;
+  --color-primary-fixed: #dce1ff;
+  --color-primary-fixed-dim: #b6c4ff;
+
+  --color-surface: #faf8ff;
+  --color-surface-bright: #faf8ff;
+  --color-surface-dim: #d9d9e3;
+  --color-surface-variant: #e2e2eb;
+  --color-surface-tint: #1d51dc;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f3fd;
+  --color-surface-container: #ededf7;
+  --color-surface-container-high: #e7e7f1;
+  --color-surface-container-highest: #e2e2eb;
+
+  --color-on-surface: #191b22;
+  --color-on-surface-variant: #434655;
+  --color-outline: #747686;
+  --color-outline-variant: #c4c5d7;
+
+  --color-secondary: #5b5e69;
+  --color-secondary-container: #e0e2ef;
+  --color-secondary-fixed: #e0e2ef;
+  --color-secondary-fixed-dim: #c4c6d2;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #61646f;
+  --color-on-secondary-fixed: #181b24;
+  --color-on-secondary-fixed-variant: #434751;
+
+  --color-tertiary: #4e535d;
+  --color-tertiary-container: #666b76;
+  --color-tertiary-fixed: #dee2ef;
+  --color-tertiary-fixed-dim: #c2c6d3;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #e8ecf9;
+  --color-on-tertiary-fixed: #171c25;
+  --color-on-tertiary-fixed-variant: #424751;
+
+  --color-background: #faf8ff;
+  --color-on-background: #191b22;
+  --color-inverse-surface: #2e3037;
+  --color-inverse-on-surface: #f0f0fa;
+  --color-inverse-primary: #b6c4ff;
+
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+
+  --font-display-editorial: 'Newsreader', Georgia, serif;
+  --font-display-hero: 'Space Grotesk', sans-serif;
+  --font-headline-lg: 'Newsreader', Georgia, serif;
+  --font-headline-md: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-headline-sm: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body-lg: 'Manrope', sans-serif;
+  --font-body-md: 'Manrope', sans-serif;
+  --font-body-sm: 'Manrope', sans-serif;
+  --font-label-md: 'Manrope', sans-serif;
+  --font-label-sm: 'Manrope', sans-serif;
+  --font-label-meta: 'JetBrains Mono', monospace;
+  --font-code-sm: 'JetBrains Mono', monospace;
+}
+
 @layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
   body {
-    background-color: #f9fafb;
-    color: #111827;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--color-surface, #faf8ff);
+    color: var(--color-on-surface, #191b22);
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+}
+
+/* Material Symbols font configuration */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* Ambient keyframes for floating vectors */
+@keyframes nexus-float-h {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(14px, -8px, 0);
+  }
+}
+
+@keyframes nexus-float-v {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-10px, 16px, 0);
+  }
+}
+
+@keyframes nexus-glider-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(180px);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-nexus-float-h {
+  animation: nexus-float-h 12s ease-in-out infinite;
+}
+
+.animate-nexus-float-v {
+  animation: nexus-float-v 10s ease-in-out infinite;
+}
+
+.animate-nexus-float-h-reverse {
+  animation: nexus-float-h 14s ease-in-out infinite reverse;
+}
+
+.animate-nexus-float-v-reverse {
+  animation: nexus-float-v 9s ease-in-out infinite reverse;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-nexus-float-h,
+  .animate-nexus-float-v,
+  .animate-nexus-float-h-reverse,
+  .animate-nexus-float-v-reverse {
+    animation: none !important;
+    transform: none !important;
   }
 }
 
@@ -20,10 +171,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--color-outline-variant, #c4c5d7);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--color-outline, #747686);
 }

@@ -9,7 +9,6 @@ import Skeleton from "../ui/Skeleton";
 import Spinner from "../ui/Spinner";
 import Toast from "../ui/Toast";
 import CanvasContainer from "./CanvasContainer";
-import MembersModal from "./MembersModal";
 import WorkspaceHeader from "./WorkspaceHeader";
 
 type AppLayoutContext = {
@@ -30,7 +29,6 @@ const WorkspacePage = () => {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [membersOpen, setMembersOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,22 +93,23 @@ const WorkspacePage = () => {
   // Skeleton loading state for Workspace initialization
   if (isLoading) {
     return (
-      <div className="flex h-full flex-col bg-gray-50 overflow-hidden">
+      <div className="flex h-full flex-col bg-surface overflow-hidden">
         {/* Header Skeleton */}
-        <div className="h-11 shrink-0 border-b border-gray-200 bg-white px-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Skeleton height={20} width={20} variant="rectangular" />
-            <Skeleton height={18} width={140} />
+        <div className="h-[60px] shrink-0 border-b border-outline-variant bg-surface-container-lowest px-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton height={20} width={70} className="rounded" />
+            <span className="text-outline-variant font-code-sm">/</span>
+            <Skeleton height={20} width={160} className="rounded" />
           </div>
-          <div className="flex items-center gap-2">
-            <Skeleton height={20} width={80} />
-            <Skeleton height={28} width={75} />
+          <div className="flex items-center gap-3">
+            <Skeleton height={28} width={80} className="rounded-full" />
+            <Skeleton height={32} width={90} className="rounded-lg" />
           </div>
         </div>
 
         {/* Canvas Placeholder Skeleton */}
-        <div className="flex flex-1 items-center justify-center bg-gray-50">
-          <div className="flex items-center gap-2.5 text-xs text-gray-500 font-medium">
+        <div className="flex flex-1 items-center justify-center bg-surface">
+          <div className="flex items-center gap-2.5 text-xs text-secondary font-medium">
             <Spinner size="md" />
             <span>Loading workspace canvas...</span>
           </div>
@@ -121,31 +120,22 @@ const WorkspacePage = () => {
 
   if (error || !workspace) {
     return (
-      <div className="flex h-full items-center justify-center bg-gray-50 px-6">
+      <div className="flex h-full items-center justify-center bg-surface px-6">
         <Toast variant="error" message={error ?? "Workspace not found"} className="max-w-md" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col bg-gray-50 overflow-hidden">
+    <div className="flex h-full flex-col bg-surface overflow-hidden">
       <WorkspaceHeader
         workspace={workspace}
         collabState={collabState}
         sidebarCollapsed={sidebarCollapsed}
         onToggleSidebar={toggleSidebar}
         onRename={handleRename}
-        onMembersOpen={() => setMembersOpen(true)}
       />
       <CanvasContainer collabState={collabState} />
-
-      {membersOpen ? (
-        <MembersModal
-          workspaceId={workspace.id}
-          ownerId={workspace.ownerId}
-          onClose={() => setMembersOpen(false)}
-        />
-      ) : null}
     </div>
   );
 };

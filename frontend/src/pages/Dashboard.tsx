@@ -1,10 +1,9 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate, useOutletContext } from "react-router-dom";
+import { useMemo, useState, type FormEvent } from "react";
+import { Link, useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
 
 import { createWorkspace } from "../api/workspace";
-import Badge from "../components/ui/Badge";
+import AvatarStack from "../components/ui/AvatarStack";
 import Button from "../components/ui/Button";
-import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import Modal from "../components/ui/Modal";
 import Skeleton from "../components/ui/Skeleton";
@@ -18,43 +17,141 @@ type DashboardContext = {
   isLoadingWorkspaces?: boolean;
   workspacesError?: string | null;
   loadWorkspaces?: () => Promise<void>;
+  setDeleteTarget?: (w: Workspace) => void;
 };
 
-const getInitials = (name: string): string => {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+const formatTimeAgo = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "Recently";
+  const now = new Date();
+  const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+
+  if (diffHours < 1) return "Updated just now";
+  if (diffHours < 24) return `Updated ${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return "Updated yesterday";
+  if (diffDays < 7) return `Updated ${diffDays}d ago`;
+  return `Updated ${date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
 };
 
-const formatCreatedAt = (createdAt: string): string => {
-  const date = new Date(createdAt);
-  if (Number.isNaN(date.getTime())) return createdAt;
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
+const cardGlyphs = [
+  // Glyph 1: Connected triad node glyph
+  (
+    <svg
+      key="glyph-1"
+      fill="none"
+      height="20"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.6"
+      viewBox="0 0 24 24"
+      width="20"
+    >
+      <circle className="fill-[#315FE9]/10" cx="12" cy="5" r="2.5" />
+      <circle className="fill-[#315FE9]/10" cx="5" cy="18" r="2.5" />
+      <circle className="fill-[#315FE9]/10" cx="19" cy="18" r="2.5" />
+      <path d="M10.5 7L6.5 15.5M13.5 7l4 8.5M7.5 18h9" stroke="#6D707B" />
+    </svg>
+  ),
+  // Glyph 2: Isometric cube outline icon
+  (
+    <svg
+      key="glyph-2"
+      fill="none"
+      height="20"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.6"
+      viewBox="0 0 24 24"
+      width="20"
+    >
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" />
+      <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" stroke="#6D707B" />
+    </svg>
+  ),
+  // Glyph 3: Overlapping circular rings icon
+  (
+    <svg
+      key="glyph-3"
+      fill="none"
+      height="20"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.6"
+      viewBox="0 0 24 24"
+      width="20"
+    >
+      <circle cx="9" cy="12" r="5.5" />
+      <circle cx="15" cy="12" r="5.5" stroke="#6D707B" />
+    </svg>
+  ),
+  // Glyph 4: 4-square interconnected diagram node glyph
+  (
+    <svg
+      key="glyph-4"
+      fill="none"
+      height="20"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.6"
+      viewBox="0 0 24 24"
+      width="20"
+    >
+      <rect height="5" rx="1" width="5" x="3" y="3" />
+      <rect height="5" rx="1" stroke="#6D707B" width="5" x="16" y="3" />
+      <rect height="5" rx="1" stroke="#6D707B" width="5" x="3" y="16" />
+      <rect height="5" rx="1" width="5" x="16" y="16" />
+      <path d="M8 5.5h8M8 18.5h8M5.5 8v8M18.5 8v8" stroke="#6D707B" strokeDasharray="1.5 1.5" />
+    </svg>
+  ),
+];
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const user = getUser();
   const context = useOutletContext<DashboardContext>();
+  const [searchParams] = useSearchParams();
+  const currentTab = searchParams.get("tab");
 
   const workspaces: Workspace[] = context?.workspaces ?? [];
   const isLoading = context?.isLoadingWorkspaces ?? false;
   const error = context?.workspacesError ?? null;
   const loadWorkspaces = context?.loadWorkspaces;
+  const setDeleteTarget = context?.setDeleteTarget;
 
-  // New Workspace Modal state
+  // Search input state
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Create Workspace Modal state
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
   const [createApiError, setCreateApiError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  const ownedWorkspaces = workspaces.filter((w: Workspace) => w.ownerId === user?.id);
-  const sharedWorkspaces = workspaces.filter((w: Workspace) => w.ownerId !== user?.id);
+  // Filter workspaces based on search and tabs
+  const filteredWorkspaces = useMemo(() => {
+    let list = workspaces;
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      list = list.filter((w) => w.name.toLowerCase().includes(q));
+    }
+    return list;
+  }, [workspaces, searchQuery]);
+
+  const ownedWorkspaces = useMemo(
+    () => filteredWorkspaces.filter((w: Workspace) => w.ownerId === user?.id),
+    [filteredWorkspaces, user?.id],
+  );
+
+  const sharedWorkspaces = useMemo(
+    () => filteredWorkspaces.filter((w: Workspace) => w.ownerId !== user?.id),
+    [filteredWorkspaces, user?.id],
+  );
 
   const handleCreateSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -91,46 +188,54 @@ const Dashboard = () => {
     }
   };
 
+  const showOwned = currentTab !== "shared";
+  const showShared = currentTab !== "recent" && currentTab !== "starred";
+
   return (
-    <div className="mx-auto max-w-6xl px-6 py-8 select-none">
-      {/* Page Header */}
-      <header className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-200 pb-6">
+    <div className="max-w-[1360px] w-full mx-auto px-6 sm:px-11 pt-10 pb-16 select-none">
+      {/* Header Row */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-10">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-gray-900">
+          <h1 className="font-display-editorial text-[38px] sm:text-[42px] leading-[48px] font-normal tracking-[-0.02em] text-[#22242B]">
             Workspaces
           </h1>
-          <p className="mt-1 text-xs text-gray-600">
-            Manage and enter your collaborative whiteboard canvases.
-          </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() => {
-            setNewWorkspaceName("");
-            setNameError(null);
-            setCreateApiError(null);
-            setCreateModalOpen(true);
-          }}
-          className="shrink-0"
-          leftIcon={
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-              <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-            </svg>
-          }
-        >
-          New Workspace
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="relative flex items-center">
+            <span className="material-symbols-outlined text-[18px] text-outline absolute left-3 pointer-events-none">
+              search
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search workspaces..."
+              className="h-[42px] w-56 sm:w-64 pl-9 pr-3 rounded-[10px] bg-surface-container-lowest text-on-surface font-body-sm text-body-sm placeholder:text-outline border border-[#E5E5E2] focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setNewWorkspaceName("");
+              setNameError(null);
+              setCreateApiError(null);
+              setCreateModalOpen(true);
+            }}
+            className="h-[42px] px-4 rounded-[10px] bg-[#315FE9] hover:bg-[#254EC8] text-white font-label-md text-label-md font-medium tracking-tight flex items-center gap-1.5 transition-colors shadow-sm active:scale-[0.98] cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            <span>New Workspace</span>
+          </button>
+        </div>
       </header>
 
-      {/* Error Banner with Retry */}
+      {/* Error banner */}
       {error ? (
-        <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border border-red-200 bg-red-50 p-4 text-xs font-medium text-red-700">
+        <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-error/30 bg-error-container/40 p-4 text-xs font-medium text-error">
           <div className="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 text-red-500">
-              <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
-            </svg>
+            <span className="material-symbols-outlined text-[18px]">error</span>
             <span>{error}</span>
           </div>
           {loadWorkspaces ? (
@@ -138,7 +243,7 @@ const Dashboard = () => {
               variant="outline"
               size="sm"
               onClick={() => void loadWorkspaces()}
-              className="border-red-300 text-red-700 hover:bg-red-100"
+              className="border-error/40 text-error hover:bg-error-container"
             >
               Retry
             </Button>
@@ -146,160 +251,190 @@ const Dashboard = () => {
         </div>
       ) : null}
 
-      {/* Loading Skeleton Grid */}
+      {/* Loading Skeletons */}
       {isLoading ? (
-        <div className="space-y-8">
+        <div className="space-y-10">
           <div>
-            <Skeleton height={20} className="mb-4 w-40" />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Skeleton height={24} className="mb-4 w-44 rounded-md" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[18px]">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i} className="flex h-36 flex-col justify-between p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 flex-1">
-                      <Skeleton height={32} width={32} variant="circular" />
-                      <Skeleton height={18} className="w-3/5" />
-                    </div>
-                    <Skeleton height={20} width={50} />
+                <div key={i} className="h-44 rounded-[12px] bg-white border border-[#E5E5E2] p-[22px] flex flex-col justify-between">
+                  <div className="flex items-start justify-between">
+                    <Skeleton height={36} width={36} className="rounded-lg" />
+                    <Skeleton height={18} width={18} className="rounded-full" />
                   </div>
-                  <div className="flex justify-between items-center">
-                    <Skeleton height={14} width={90} />
-                    <Skeleton height={14} width={70} />
+                  <Skeleton height={20} className="w-3/4 rounded-md" />
+                  <div className="flex items-center justify-between pt-2">
+                    <Skeleton height={24} width={70} className="rounded-full" />
+                    <Skeleton height={14} width={80} className="rounded-sm" />
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
           </div>
         </div>
       ) : (
         <div className="space-y-10">
-          {/* Owned Workspaces */}
-          <section aria-labelledby="owned-workspaces-heading">
-            <div className="mb-4 flex items-center justify-between">
-              <h2
-                id="owned-workspaces-heading"
-                className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2"
-              >
-                <span>Owned Workspaces</span>
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">
-                  {ownedWorkspaces.length}
-                </span>
-              </h2>
-            </div>
-
-            {ownedWorkspaces.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-2xs">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 mb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="h-6 w-6">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-semibold text-gray-900">No owned workspaces</h3>
-                <p className="mt-1 text-xs text-gray-500 max-w-sm mx-auto">
-                  Get started by creating your first infinite whiteboard workspace.
-                </p>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => {
-                    setNewWorkspaceName("");
-                    setNameError(null);
-                    setCreateApiError(null);
-                    setCreateModalOpen(true);
-                  }}
-                  className="mt-4"
+          {/* Section 1: Owned Workspaces */}
+          {showOwned ? (
+            <section aria-labelledby="owned-workspaces-heading">
+              <div className="flex items-center justify-between mb-4">
+                <h2
+                  id="owned-workspaces-heading"
+                  className="font-headline-md text-[20px] leading-[28px] font-medium tracking-tight text-[#22242B]"
                 >
-                  Create Workspace
-                </Button>
+                  Owned Workspaces
+                </h2>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {ownedWorkspaces.map((workspace: Workspace) => (
-                  <Link
-                    key={workspace.id}
-                    to={`/workspaces/${workspace.id}`}
-                    aria-label={`Open workspace ${workspace.name}`}
-                    className="group outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-gray-900"
+
+              {ownedWorkspaces.length === 0 ? (
+                <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-white p-12 text-center">
+                  <div className="w-10 h-10 rounded-full bg-[#EEF2FF] text-[#315FE9] flex items-center justify-center mx-auto mb-3">
+                    <span className="material-symbols-outlined text-[20px]">draw</span>
+                  </div>
+                  <h3 className="font-headline-sm text-base font-semibold text-[#22242B]">
+                    No owned workspaces
+                  </h3>
+                  <p className="mt-1 text-xs text-secondary max-w-sm mx-auto">
+                    Create your first infinite whiteboard canvas to start sketching ideas and collaborating.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewWorkspaceName("");
+                      setNameError(null);
+                      setCreateApiError(null);
+                      setCreateModalOpen(true);
+                    }}
+                    className="mt-4 px-4 py-2 rounded-lg bg-[#315FE9] text-white font-label-md text-xs font-medium hover:bg-[#254EC8] transition-colors"
                   >
-                    <Card interactive className="flex h-36 flex-col justify-between p-5">
-                      <div>
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-xs font-bold text-gray-700 border border-gray-200">
-                              {getInitials(workspace.name)}
+                    Create Workspace
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[18px]">
+                  {ownedWorkspaces.map((workspace: Workspace, idx: number) => {
+                    const glyph = cardGlyphs[idx % cardGlyphs.length];
+                    return (
+                      <div
+                        key={workspace.id}
+                        className="group relative bg-[#FFFFFF] border border-[#E5E5E2] hover:border-[#CBD5E1] rounded-[12px] p-[22px] transition-all duration-200 hover:-translate-y-[2px] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
+                      >
+                        <Link
+                          to={`/workspaces/${workspace.id}`}
+                          className="block"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] flex items-center justify-center text-[#315FE9]">
+                              {glyph}
                             </div>
-                            <h3 className="truncate text-sm font-semibold text-gray-900 group-hover:text-gray-900">
+                            <span className="material-symbols-outlined text-[18px] text-transparent group-hover:text-outline transition-colors">
+                              arrow_outward
+                            </span>
+                          </div>
+
+                          <div className="mt-5 mb-7">
+                            <h3 className="font-headline-sm text-[17px] font-semibold text-[#22242B] group-hover:text-[#315FE9] transition-colors leading-snug truncate">
                               {workspace.name}
                             </h3>
                           </div>
-                          <Badge variant="owner">Owner</Badge>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-gray-400 border-t border-gray-100 pt-3">
-                        <span>Created {formatCreatedAt(workspace.createdAt)}</span>
-                        <span className="font-semibold opacity-0 group-hover:opacity-100 transition-opacity text-gray-700">
-                          Open canvas →
-                        </span>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
 
-          {/* Shared Workspaces */}
-          <section aria-labelledby="shared-workspaces-heading">
-            <div className="mb-4 flex items-center justify-between">
-              <h2
-                id="shared-workspaces-heading"
-                className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2"
-              >
-                <span>Shared Workspaces</span>
-                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
-                  {sharedWorkspaces.length}
-                </span>
-              </h2>
-            </div>
-
-            {sharedWorkspaces.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-gray-200 bg-white p-8 text-center shadow-2xs">
-                <p className="text-xs text-gray-400">No workspaces shared with you yet.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {sharedWorkspaces.map((workspace: Workspace) => (
-                  <Link
-                    key={workspace.id}
-                    to={`/workspaces/${workspace.id}`}
-                    aria-label={`Open shared workspace ${workspace.name}`}
-                    className="group outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-gray-900"
-                  >
-                    <Card interactive className="flex h-36 flex-col justify-between p-5">
-                      <div>
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-xs font-bold text-blue-700 border border-blue-200">
-                              {getInitials(workspace.name)}
-                            </div>
-                            <h3 className="truncate text-sm font-semibold text-gray-900">
-                              {workspace.name}
-                            </h3>
+                          <div className="flex items-center justify-between pt-2">
+                            <AvatarStack
+                              users={[
+                                { name: user?.name, email: user?.email },
+                              ]}
+                              size="sm"
+                            />
+                            <span className="font-label-sm text-[13px] text-[#6D707B]">
+                              {formatTimeAgo(workspace.createdAt)}
+                            </span>
                           </div>
-                          <Badge variant="shared">Shared</Badge>
-                        </div>
+                        </Link>
+
+                        {/* Delete action */}
+                        {setDeleteTarget ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget(workspace);
+                            }}
+                            title={`Delete ${workspace.name}`}
+                            aria-label={`Delete ${workspace.name}`}
+                            className="absolute top-4 right-10 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 text-outline hover:text-red-600 transition-all"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                          </button>
+                        ) : null}
                       </div>
-                      <div className="flex items-center justify-between text-[11px] text-gray-400 border-t border-gray-100 pt-3">
-                        <span>Created {formatCreatedAt(workspace.createdAt)}</span>
-                        <span className="font-semibold opacity-0 group-hover:opacity-100 transition-opacity text-gray-700">
-                          Open canvas →
-                        </span>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          ) : null}
+
+          {/* Section 2: Shared Workspaces */}
+          {showShared ? (
+            <section className="mt-[36px]" aria-labelledby="shared-workspaces-heading">
+              <div className="flex items-center justify-between mb-4">
+                <h2
+                  id="shared-workspaces-heading"
+                  className="font-headline-md text-[20px] leading-[28px] font-medium tracking-tight text-[#22242B]"
+                >
+                  Shared Workspaces
+                </h2>
               </div>
-            )}
-          </section>
+
+              {sharedWorkspaces.length === 0 ? (
+                <div className="rounded-[12px] border border-dashed border-[#CBD5E1] bg-white p-8 text-center">
+                  <p className="text-xs text-secondary">
+                    No workspaces shared with you yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[18px]">
+                  {sharedWorkspaces.map((workspace: Workspace, idx: number) => {
+                    const glyph = cardGlyphs[(idx + 2) % cardGlyphs.length];
+                    return (
+                      <Link
+                        key={workspace.id}
+                        to={`/workspaces/${workspace.id}`}
+                        className="group block bg-[#FFFFFF] border border-[#E5E5E2] hover:border-[#CBD5E1] rounded-[12px] p-[22px] transition-all duration-200 hover:-translate-y-[2px] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="w-9 h-9 rounded-lg bg-[#EEF2FF] flex items-center justify-center text-[#315FE9]">
+                            {glyph}
+                          </div>
+                          <span className="material-symbols-outlined text-[18px] text-transparent group-hover:text-outline transition-colors">
+                            arrow_outward
+                          </span>
+                        </div>
+
+                        <div className="mt-5 mb-7">
+                          <h3 className="font-headline-sm text-[17px] font-semibold text-[#22242B] group-hover:text-[#315FE9] transition-colors leading-snug truncate">
+                            {workspace.name}
+                          </h3>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-label-sm text-[13px] text-[#6D707B] truncate">
+                              Shared workspace
+                            </span>
+                          </div>
+                          <span className="font-label-sm text-[13px] text-[#6D707B] shrink-0">
+                            {formatTimeAgo(workspace.createdAt)}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          ) : null}
         </div>
       )}
 
@@ -326,7 +461,7 @@ const Dashboard = () => {
             id="modal-workspace-name"
             name="name"
             type="text"
-            placeholder="e.g. Design Systems & Architecture"
+            placeholder="e.g. Design Systems & Tokens"
             value={newWorkspaceName}
             onChange={(e) => {
               setNewWorkspaceName(e.target.value);
@@ -337,7 +472,7 @@ const Dashboard = () => {
             disabled={isCreating}
           />
 
-          <div className="flex items-center justify-end gap-2 pt-2">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-outline-variant/40">
             <Button
               type="button"
               variant="ghost"

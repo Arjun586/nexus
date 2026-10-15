@@ -62,7 +62,7 @@ export const Modal = ({
     <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-150"
+        className="fixed inset-0 bg-on-surface/30 backdrop-blur-sm transition-opacity duration-150"
         aria-hidden="true"
         onClick={preventBackdropClose ? undefined : onClose}
       />
@@ -74,16 +74,16 @@ export const Modal = ({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
-        className={`relative z-10 w-full ${maxWidthClasses[maxWidth]} overflow-hidden rounded-xl border border-gray-200 bg-white p-6 shadow-2xl transition-all duration-150 ease-out`}
+        className={`relative z-10 w-full ${maxWidthClasses[maxWidth]} overflow-hidden rounded-xl border border-outline-variant/60 bg-surface-container-lowest p-6 shadow-[0_16px_48px_-8px_rgba(25,27,34,0.12)] transition-all duration-150 ease-out`}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 id={titleId} className="text-base font-semibold text-gray-900">
+            <h2 id={titleId} className="font-headline-sm text-headline-sm font-semibold text-on-surface tracking-tight">
               {title}
             </h2>
             {description ? (
-              <p id={descId} className="mt-1 text-xs text-gray-600">
+              <p id={descId} className="mt-1 font-body-sm text-body-sm text-secondary">
                 {description}
               </p>
             ) : null}
@@ -93,11 +93,9 @@ export const Modal = ({
             onClick={onClose}
             disabled={preventBackdropClose}
             aria-label="Close dialog"
-            className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 outline-none focus-visible:ring-2 focus-visible:ring-gray-900 disabled:opacity-50 transition-opacity"
+            className="rounded-lg p-1 text-secondary hover:bg-surface-container-high hover:text-on-surface outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50 transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-            </svg>
+            <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
         </div>
 

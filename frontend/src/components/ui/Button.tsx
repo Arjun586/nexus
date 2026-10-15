@@ -26,25 +26,25 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-medium transition-all duration-150 ease-in-out rounded-md outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 select-none";
+      "inline-flex items-center justify-center font-label-md font-medium transition-all duration-150 ease-in-out rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 select-none";
 
     const variantStyles = {
       primary:
-        "bg-gray-900 text-white hover:bg-gray-800 active:scale-[0.98] focus-visible:ring-gray-900 shadow-xs",
+        "bg-primary text-on-primary hover:bg-primary-container active:bg-on-primary-fixed-variant active:scale-[0.98] shadow-sm",
       secondary:
-        "bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-200 active:scale-[0.98] focus-visible:ring-gray-900",
+        "bg-surface-container-low text-on-surface hover:bg-surface-container border border-outline-variant/60 active:scale-[0.98]",
       outline:
-        "bg-transparent text-gray-900 border border-gray-300 hover:bg-gray-50 active:scale-[0.98] focus-visible:ring-gray-900",
+        "bg-surface-container-lowest text-on-surface border border-outline-variant hover:bg-surface-container-low active:scale-[0.98]",
       ghost:
-        "bg-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:scale-[0.98] focus-visible:ring-gray-900",
+        "bg-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high active:scale-[0.98]",
       danger:
-        "bg-red-600 text-white hover:bg-red-700 active:scale-[0.98] focus-visible:ring-red-500 shadow-xs",
+        "bg-error text-on-error hover:bg-on-error-container active:scale-[0.98] shadow-sm",
     };
 
     const sizeStyles = {
-      sm: "px-2.5 py-1.5 text-xs gap-1.5 min-h-[30px]",
-      md: "px-3.5 py-2 text-sm gap-2 min-h-[36px]",
-      lg: "px-4 py-2.5 text-sm font-semibold gap-2 min-h-[42px]",
+      sm: "px-3 py-1.5 text-label-sm gap-1.5 min-h-[30px]",
+      md: "px-4 py-2 text-label-md gap-2 min-h-[38px]",
+      lg: "px-5 py-2.5 text-label-md font-semibold gap-2.5 min-h-[44px]",
     };
 
     return (

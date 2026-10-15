@@ -21,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label ? (
           <label
             htmlFor={inputId}
-            className="mb-1.5 block text-xs font-medium text-gray-700"
+            className="mb-1.5 block font-label-md text-label-md font-medium text-on-surface"
           >
             {label}
           </label>
@@ -33,18 +33,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           disabled={disabled}
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
-          className={`w-full rounded-md border bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-colors duration-150 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60 ${
-            error ? "border-red-500 focus:ring-red-500" : "border-gray-300"
+          className={`w-full h-11 rounded-lg bg-surface-container-lowest px-3.5 text-on-surface font-body-sm text-body-sm placeholder:text-outline-variant outline outline-1 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest disabled:cursor-not-allowed disabled:bg-surface-container-low disabled:opacity-60 ${
+            error
+              ? "outline-error ring-1 ring-error"
+              : "outline-surface-container-highest focus:outline-primary"
           } ${className}`}
           {...props}
         />
 
         {error ? (
-          <p id={errorId} className="mt-1 text-xs font-medium text-red-600" role="alert">
+          <p id={errorId} className="mt-1 font-body-sm text-xs font-medium text-error" role="alert">
             {error}
           </p>
         ) : helperText ? (
-          <p id={helperId} className="mt-1 text-xs text-gray-500">
+          <p id={helperId} className="mt-1 font-body-sm text-xs text-secondary">
             {helperText}
           </p>
         ) : null}

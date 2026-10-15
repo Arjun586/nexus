@@ -1,7 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 
+import { getCollaborators, inviteCollaborator } from "../../api/workspace";
 import type { CollaborationState } from "../../collaboration/useCollaboration";
+import { getUser } from "../../session/user";
+import type { Collaborator } from "../../types/collaborator";
 import type { Workspace } from "../../types/workspace";
+import { parseApiError } from "../../utils/parse-api-error";
+import AvatarStack, { getInitials } from "../ui/AvatarStack";
 import Button from "../ui/Button";
 
 type WorkspaceHeaderProps = {
@@ -10,57 +16,80 @@ type WorkspaceHeaderProps = {
   sidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
   onRename: (newName: string) => Promise<boolean>;
-  onMembersOpen: () => void;
 };
 
-const ConnectionStatusBadge = ({ status }: { status?: string }) => {
-  if (status === "connected") {
-    return (
-      <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-200/60 select-none">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        <span>Connected</span>
-      </div>
-    );
-  }
+interface PageItem {
+  id: string;
+  name: string;
+  badge?: string;
+  active?: boolean;
+}
 
-  if (status === "connecting") {
-    return (
-      <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 border border-amber-200/60 select-none">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-        <span>Connecting…</span>
-      </div>
-    );
-  }
-
-  if (status === "reconnecting") {
-    return (
-      <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 border border-amber-200/60 select-none">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
-        <span>Reconnecting…</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-1.5 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700 border border-rose-200/60 select-none">
-      <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-      <span>Offline</span>
-    </div>
-  );
-};
-
-const WorkspaceHeader = ({
+export const WorkspaceHeader = ({
   workspace,
   collabState,
   sidebarCollapsed,
   onToggleSidebar,
   onRename,
-  onMembersOpen,
 }: WorkspaceHeaderProps) => {
+  const currentUser = getUser();
+  const isOwner = currentUser?.id === workspace.ownerId;
+
+  // Inline rename state
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Popover states
+  const [pagesOpen, setPagesOpen] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
+
+  // Document Pages state (local client state matching Screen 4)
+  const [pages, setPages] = useState<PageItem[]>([
+    { id: "p1", name: "Page 1: Architecture Flow", badge: "Active", active: true },
+    { id: "p2", name: "Page 2: Token Hierarchy", badge: "v1.2" },
+    { id: "p3", name: "Page 3: Component Spreads", badge: "Draft" },
+  ]);
+
+  // Collaborators state
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [isLoadingCollab, setIsLoadingCollab] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteMsg, setInviteMsg] = useState<{ text: string; isError?: boolean } | null>(null);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoadingCollab(true);
+
+    getCollaborators(workspace.id)
+      .then((data) => {
+        if (!cancelled) setCollaborators(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setIsLoadingCollab(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [workspace.id]);
+
+  // Click outside to dismiss popovers
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setPagesOpen(false);
+        setMembersOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -80,7 +109,7 @@ const WorkspaceHeader = ({
     setEditName(workspace.name);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitRename = async () => {
     const trimmed = editName.trim();
     if (!trimmed || trimmed === workspace.name || isRenaming) return;
 
@@ -95,110 +124,392 @@ const WorkspaceHeader = ({
     }
   };
 
-  const canSave =
-    editName.trim().length > 0 &&
-    editName.trim() !== workspace.name &&
-    !isRenaming;
+  const handleInviteSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const trimmed = inviteEmail.trim();
+    if (!trimmed) return;
+
+    setIsInviting(true);
+    setInviteMsg(null);
+
+    try {
+      await inviteCollaborator(workspace.id, { email: trimmed });
+      setInviteEmail("");
+      setInviteMsg({ text: `Invited ${trimmed} successfully.` });
+      const refreshed = await getCollaborators(workspace.id);
+      setCollaborators(refreshed);
+    } catch (err) {
+      const { message } = parseApiError(err);
+      setInviteMsg({ text: message, isError: true });
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const activePage = pages.find((p) => p.active) || pages[0];
+
+  const handleSelectPage = (pageId: string) => {
+    setPages((prev) =>
+      prev.map((p) => ({
+        ...p,
+        active: p.id === pageId,
+      })),
+    );
+    setPagesOpen(false);
+  };
+
+  const handleAddPage = () => {
+    const newPageNum = pages.length + 1;
+    const newPage: PageItem = {
+      id: `p${newPageNum}`,
+      name: `Page ${newPageNum}: Section Canvas`,
+      badge: "Draft",
+      active: true,
+    };
+    setPages((prev) => [...prev.map((p) => ({ ...p, active: false })), newPage]);
+    setPagesOpen(false);
+  };
+
+  const connectionStatus = collabState?.status ?? "connecting";
+  const isLive = connectionStatus === "connected";
+
+  const roomId = `nx-${workspace.id.slice(0, 6)}`;
 
   return (
-    <header className="h-11 shrink-0 border-b border-gray-200 bg-white px-3.5 flex items-center justify-between z-10 select-none">
-      <div className="flex items-center gap-2.5 min-w-0">
-        {/* Sidebar Toggle Trigger */}
-        {onToggleSidebar ? (
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={`Toggle sidebar (${navigator.platform.indexOf("Mac") > -1 ? "⌘B" : "Ctrl+B"})`}
-            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-900 outline-none focus-visible:ring-2 focus-visible:ring-gray-900 transition-colors shrink-0"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-              <path fillRule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 10a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Zm0 5.25a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
-            </svg>
-          </button>
-        ) : null}
-
-        {/* Workspace Title & Inline Rename */}
-        {isEditing ? (
-          <div className="flex items-center gap-1.5">
-            <input
-              ref={inputRef}
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") void handleSubmit();
-                if (e.key === "Escape") handleCancel();
-              }}
-              disabled={isRenaming}
-              maxLength={100}
-              aria-label="Workspace title"
-              className="rounded border border-gray-300 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-900 outline-none focus:ring-2 focus:ring-gray-900 disabled:opacity-50"
-            />
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => void handleSubmit()}
-              isLoading={isRenaming}
-              disabled={!canSave}
-              className="py-0.5 px-2 text-xs min-h-[26px]"
-            >
-              Save
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCancel}
-              disabled={isRenaming}
-              className="py-0.5 px-2 text-xs min-h-[26px]"
-            >
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 min-w-0">
-            <h1 className="text-xs font-semibold text-gray-900 tracking-tight truncate">
-              {workspace.name}
-            </h1>
+    <div ref={containerRef} className="relative z-40">
+      <header className="h-[60px] bg-surface-container-lowest/90 backdrop-blur-md border-b border-surface-variant z-40 flex items-center justify-between px-6 select-none">
+        {/* Left: Breadcrumbs & Inline rename */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          {onToggleSidebar ? (
             <button
               type="button"
-              onClick={startEditing}
-              aria-label="Rename workspace"
-              className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-900 outline-none focus-visible:ring-1 focus-visible:ring-gray-900 transition-colors shrink-0"
+              onClick={onToggleSidebar}
+              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title="Toggle sidebar (⌘B)"
+              className="rounded-lg p-1 text-secondary hover:bg-surface-container-low hover:text-on-surface transition-colors shrink-0"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className="h-3.5 w-3.5"
+              <span className="material-symbols-outlined text-[18px]">
+                {sidebarCollapsed ? "menu_open" : "menu"}
+              </span>
+            </button>
+          ) : null}
+
+          <div className="flex items-center gap-2 text-on-surface min-w-0">
+            <Link
+              to="/dashboard"
+              className="font-body-md text-body-md text-secondary hover:text-on-surface transition-colors shrink-0"
+            >
+              workspace
+            </Link>
+            <span className="text-outline-variant font-code-sm text-code-sm">/</span>
+
+            {isEditing ? (
+              <div className="flex items-center gap-1.5 min-w-0">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void handleSubmitRename();
+                    if (e.key === "Escape") handleCancel();
+                  }}
+                  disabled={isRenaming}
+                  maxLength={100}
+                  className="rounded-lg border border-outline-variant bg-surface-container-lowest px-2.5 py-1 text-xs font-semibold text-on-surface outline-none focus:ring-2 focus:ring-primary min-w-[140px]"
+                />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => void handleSubmitRename()}
+                  isLoading={isRenaming}
+                  disabled={!editName.trim() || editName.trim() === workspace.name || isRenaming}
+                  className="py-0.5 px-2 text-xs min-h-[26px]"
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancel}
+                  disabled={isRenaming}
+                  className="py-0.5 px-2 text-xs min-h-[26px]"
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div
+                onClick={startEditing}
+                title="Click to rename"
+                className="flex items-center gap-1.5 cursor-pointer group min-w-0"
               >
-                <path d="m5.433 13.917 1.262-3.155A4 4 0 0 1 7.58 9.42l6.92-6.918a2.121 2.121 0 0 1 3 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 0 1-.65-.65Z" />
-                <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0 0 10 3H4.75A2.75 2.75 0 0 0 2 5.75v9.5A2.75 2.75 0 0 0 4.75 18h9.5A2.75 2.75 0 0 0 17 15.25V10a.75.75 0 0 0-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5Z" />
-              </svg>
+                <span className="font-headline-sm text-headline-sm text-on-surface tracking-tight truncate max-w-[280px] sm:max-w-[400px]">
+                  {workspace.name}
+                </span>
+                <span className="material-symbols-outlined text-[14px] text-transparent group-hover:text-outline transition-colors">
+                  edit
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Center: Page Selector Pill */}
+        <div className="hidden md:flex items-center">
+          <button
+            type="button"
+            onClick={() => {
+              setPagesOpen((prev) => !prev);
+              setMembersOpen(false);
+            }}
+            className="flex items-center bg-surface-container-low rounded-lg px-3 py-1 border border-surface-variant cursor-pointer hover:bg-surface-container transition-colors"
+          >
+            <span className="material-symbols-outlined text-secondary text-[16px] mr-1.5">
+              layers
+            </span>
+            <span className="font-label-md text-label-md text-on-surface">
+              {activePage.name}
+            </span>
+            <span className="material-symbols-outlined text-secondary text-[16px] ml-1">
+              expand_more
+            </span>
+          </button>
+        </div>
+
+        {/* Right cluster: Collaborators stack, Live indicator, Members button, Profile */}
+        <div className="flex items-center gap-3">
+          {/* Avatar stack */}
+          <div className="hidden sm:flex">
+            <AvatarStack
+              users={
+                collaborators.length > 0
+                  ? collaborators.map((c) => ({
+                      id: c.user.id,
+                      name: c.user.name,
+                      email: c.user.email,
+                    }))
+                  : [{ name: currentUser?.name, email: currentUser?.email }]
+              }
+              size="sm"
+            />
+          </div>
+
+          {/* Live Indicator badge */}
+          <div className="flex items-center gap-1.5 bg-surface-container-low px-2 py-0.5 rounded-full border border-surface-variant select-none">
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isLive
+                  ? "bg-primary animate-pulse"
+                  : connectionStatus === "connecting"
+                  ? "bg-amber-500 animate-ping"
+                  : "bg-error"
+              }`}
+            />
+            <span className="font-code-sm text-[11px] text-secondary">
+              {isLive ? "Live" : connectionStatus === "connecting" ? "Sync" : "Offline"}
+            </span>
+          </div>
+
+          {/* Members Trigger Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setMembersOpen((prev) => !prev);
+              setPagesOpen(false);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1 border border-surface-variant rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px] text-secondary">
+              group_add
+            </span>
+            <span>Members</span>
+          </button>
+
+          {/* User profile avatar */}
+          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 text-on-primary text-xs font-semibold">
+            {getInitials(currentUser?.name || currentUser?.email)}
+          </div>
+        </div>
+      </header>
+
+      {/* Pages Dropdown Popover */}
+      {pagesOpen ? (
+        <div
+          id="pages-popover"
+          className="absolute top-14 left-1/2 -translate-x-1/2 z-50 w-72 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/40 p-1 flex flex-col gap-0.5"
+        >
+          <div className="p-2 border-b border-surface-variant/40 flex items-center justify-between">
+            <span className="font-label-sm text-[11px] text-secondary uppercase tracking-wider px-2">
+              Document Pages
+            </span>
+            <button
+              type="button"
+              onClick={handleAddPage}
+              className="p-1 hover:bg-surface-container rounded-md text-secondary hover:text-on-surface transition-colors"
+              title="Add page"
+            >
+              <span className="material-symbols-outlined text-[16px]">add</span>
             </button>
           </div>
-        )}
-      </div>
 
-      {/* Right Section: Connection Badge & Members Modal Trigger */}
-      <div className="flex items-center gap-2.5 shrink-0">
-        <ConnectionStatusBadge status={collabState?.status} />
+          <div className="p-1 flex flex-col gap-0.5">
+            {pages.map((page) => (
+              <div
+                key={page.id}
+                onClick={() => handleSelectPage(page.id)}
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors ${
+                  page.active
+                    ? "bg-surface-container-high text-on-surface font-semibold"
+                    : "hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px] text-primary">
+                    {page.active ? "check_small" : "article"}
+                  </span>
+                  <span className="font-label-md text-label-md">{page.name}</span>
+                </div>
+                {page.badge ? (
+                  <span className="font-code-sm text-[11px] text-secondary bg-surface-container px-1.5 py-0.5 rounded">
+                    {page.badge}
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onMembersOpen}
-          className="py-1 px-2.5 text-xs min-h-[28px]"
-          leftIcon={
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-              <path d="M7 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM14.5 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1.615 16.428a1.224 1.224 0 0 1-.569-1.175 6.002 6.002 0 0 1 11.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 0 1 7 18a9.953 9.953 0 0 1-5.385-1.572ZM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 0 0-1.588-3.755 4.502 4.502 0 0 1 5.874 2.636.818.818 0 0 1-.36.98A7.465 7.465 0 0 1 14.5 16Z" />
-            </svg>
-          }
+      {/* Active Collaborators / Members Popover */}
+      {membersOpen ? (
+        <div
+          id="members-popover"
+          className="absolute top-14 right-6 z-50 w-80 bg-surface-container-lowest rounded-xl shadow-2xl border border-outline-variant/40 transition-all duration-150"
         >
-          Members
-        </Button>
-      </div>
-    </header>
+          <div className="p-3 flex items-center justify-between bg-surface-container-low rounded-t-xl border-b border-outline-variant/40">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-secondary text-[18px]">group</span>
+              <span className="font-label-md text-label-md text-on-surface font-semibold">
+                Active Collaborators
+              </span>
+            </div>
+            <span className="font-code-sm text-[11px] text-secondary bg-surface-container px-2 py-0.5 rounded">
+              {collaborators.length + 1} members
+            </span>
+          </div>
+
+          {/* Members list */}
+          <div className="p-2 flex flex-col gap-1 max-h-64 overflow-y-auto">
+            {/* Current user */}
+            <div className="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-low transition-colors">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="relative">
+                  <div className="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-fixed font-label-sm font-semibold text-xs">
+                    {getInitials(currentUser?.name || currentUser?.email)}
+                  </div>
+                  <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-primary-container ring-1 ring-surface-container-lowest" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-label-md text-label-md text-on-surface truncate">
+                    {currentUser?.name || "You"}
+                  </div>
+                  <div className="font-code-sm text-[10px] text-secondary truncate">
+                    {isOwner ? "Owner · Active" : "Editor · Active"}
+                  </div>
+                </div>
+              </div>
+              <span className="font-code-sm text-[11px] text-primary px-1.5 py-0.5 rounded bg-primary-fixed/40">
+                You
+              </span>
+            </div>
+
+            {/* Other collaborators */}
+            {isLoadingCollab ? (
+              <p className="text-xs text-secondary text-center py-2">Loading members...</p>
+            ) : collaborators.length === 0 ? (
+              <p className="text-xs text-secondary text-center py-2">No other members yet.</p>
+            ) : (
+              collaborators.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-low transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="relative">
+                      <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-sm font-semibold text-xs">
+                        {getInitials(c.user.name || c.user.email)}
+                      </div>
+                      <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-primary ring-1 ring-surface-container-lowest" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-label-md text-label-md text-on-surface truncate">
+                        {c.user.name || c.user.email}
+                      </div>
+                      <div className="font-code-sm text-[10px] text-secondary truncate">
+                        {c.user.email}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="font-label-sm text-[11px] text-secondary">
+                    {c.role === "OWNER" ? "Owner" : "Editor"}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Invite form (Owner only) */}
+          {isOwner ? (
+            <form onSubmit={handleInviteSubmit} className="p-3 border-t border-outline-variant/40">
+              <span className="font-label-sm text-[11px] text-secondary block mb-1.5">
+                Invite team member
+              </span>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  disabled={isInviting}
+                  className="flex-1 h-9 px-2.5 rounded-lg bg-surface-container-lowest text-xs text-on-surface border border-outline-variant focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  isLoading={isInviting}
+                  className="h-9 px-3 text-xs"
+                >
+                  Invite
+                </Button>
+              </div>
+              {inviteMsg ? (
+                <p
+                  className={`mt-1.5 text-[11px] font-medium ${
+                    inviteMsg.isError ? "text-error" : "text-primary"
+                  }`}
+                >
+                  {inviteMsg.text}
+                </p>
+              ) : null}
+            </form>
+          ) : null}
+
+          {/* Footer with Room ID */}
+          <div className="p-2.5 bg-surface-container-low rounded-b-xl flex items-center justify-between text-secondary border-t border-outline-variant/40">
+            <span className="font-code-sm text-[11px]">Room ID: {roomId}</span>
+            <button
+              type="button"
+              className="font-label-sm text-[11px] text-primary hover:text-on-primary-fixed-variant transition-colors flex items-center gap-1 cursor-pointer"
+              onClick={() => setMembersOpen(false)}
+            >
+              <span>Close</span>
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 };
 

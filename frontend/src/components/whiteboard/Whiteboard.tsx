@@ -112,9 +112,9 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
 
   if (!collabState || collabState.status !== "connected") {
     return (
-      <div className="flex h-full items-center justify-center bg-gray-50">
-        <div className="flex items-center gap-2.5 text-xs text-gray-600">
-          <span className="inline-block animate-spin rounded-full border-2 border-current border-t-transparent h-4 w-4 opacity-80" />
+      <div className="flex h-full items-center justify-center bg-surface">
+        <div className="flex items-center gap-2.5 text-xs text-secondary font-label-md">
+          <span className="inline-block animate-spin rounded-full border-2 border-primary border-t-transparent h-4 w-4" />
           <span>Connecting to collaboration server...</span>
         </div>
       </div>
