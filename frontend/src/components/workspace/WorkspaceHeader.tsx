@@ -18,13 +18,6 @@ type WorkspaceHeaderProps = {
   onRename: (newName: string) => Promise<boolean>;
 };
 
-interface PageItem {
-  id: string;
-  name: string;
-  badge?: string;
-  active?: boolean;
-}
-
 export const WorkspaceHeader = ({
   workspace,
   collabState,
@@ -41,16 +34,8 @@ export const WorkspaceHeader = ({
   const [isRenaming, setIsRenaming] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Popover states
-  const [pagesOpen, setPagesOpen] = useState(false);
+  // Popover state
   const [membersOpen, setMembersOpen] = useState(false);
-
-  // Document Pages state (local client state matching Screen 4)
-  const [pages, setPages] = useState<PageItem[]>([
-    { id: "p1", name: "Page 1: Architecture Flow", badge: "Active", active: true },
-    { id: "p2", name: "Page 2: Token Hierarchy", badge: "v1.2" },
-    { id: "p3", name: "Page 3: Component Spreads", badge: "Draft" },
-  ]);
 
   // Collaborators state
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
@@ -79,11 +64,10 @@ export const WorkspaceHeader = ({
     };
   }, [workspace.id]);
 
-  // Click outside to dismiss popovers
+  // Click outside to dismiss popover
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setPagesOpen(false);
         setMembersOpen(false);
       }
     };
@@ -144,30 +128,6 @@ export const WorkspaceHeader = ({
     } finally {
       setIsInviting(false);
     }
-  };
-
-  const activePage = pages.find((p) => p.active) || pages[0];
-
-  const handleSelectPage = (pageId: string) => {
-    setPages((prev) =>
-      prev.map((p) => ({
-        ...p,
-        active: p.id === pageId,
-      })),
-    );
-    setPagesOpen(false);
-  };
-
-  const handleAddPage = () => {
-    const newPageNum = pages.length + 1;
-    const newPage: PageItem = {
-      id: `p${newPageNum}`,
-      name: `Page ${newPageNum}: Section Canvas`,
-      badge: "Draft",
-      active: true,
-    };
-    setPages((prev) => [...prev.map((p) => ({ ...p, active: false })), newPage]);
-    setPagesOpen(false);
   };
 
   const connectionStatus = collabState?.status ?? "connecting";
@@ -255,28 +215,6 @@ export const WorkspaceHeader = ({
           </div>
         </div>
 
-        {/* Center: Page Selector Pill */}
-        <div className="hidden md:flex items-center">
-          <button
-            type="button"
-            onClick={() => {
-              setPagesOpen((prev) => !prev);
-              setMembersOpen(false);
-            }}
-            className="flex items-center bg-surface-container-low rounded-lg px-3 py-1 border border-surface-variant cursor-pointer hover:bg-surface-container transition-colors"
-          >
-            <span className="material-symbols-outlined text-secondary text-[16px] mr-1.5">
-              layers
-            </span>
-            <span className="font-label-md text-label-md text-on-surface">
-              {activePage.name}
-            </span>
-            <span className="material-symbols-outlined text-secondary text-[16px] ml-1">
-              expand_more
-            </span>
-          </button>
-        </div>
-
         {/* Right cluster: Collaborators stack, Live indicator, Members button, Profile */}
         <div className="flex items-center gap-3">
           {/* Avatar stack */}
@@ -314,10 +252,7 @@ export const WorkspaceHeader = ({
           {/* Members Trigger Button */}
           <button
             type="button"
-            onClick={() => {
-              setMembersOpen((prev) => !prev);
-              setPagesOpen(false);
-            }}
+            onClick={() => setMembersOpen((prev) => !prev)}
             className="flex items-center gap-1.5 px-3 py-1 border border-surface-variant rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-[16px] text-secondary">
@@ -332,54 +267,6 @@ export const WorkspaceHeader = ({
           </div>
         </div>
       </header>
-
-      {/* Pages Dropdown Popover */}
-      {pagesOpen ? (
-        <div
-          id="pages-popover"
-          className="absolute top-14 left-1/2 -translate-x-1/2 z-50 w-72 bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant/40 p-1 flex flex-col gap-0.5"
-        >
-          <div className="p-2 border-b border-surface-variant/40 flex items-center justify-between">
-            <span className="font-label-sm text-[11px] text-secondary uppercase tracking-wider px-2">
-              Document Pages
-            </span>
-            <button
-              type="button"
-              onClick={handleAddPage}
-              className="p-1 hover:bg-surface-container rounded-md text-secondary hover:text-on-surface transition-colors"
-              title="Add page"
-            >
-              <span className="material-symbols-outlined text-[16px]">add</span>
-            </button>
-          </div>
-
-          <div className="p-1 flex flex-col gap-0.5">
-            {pages.map((page) => (
-              <div
-                key={page.id}
-                onClick={() => handleSelectPage(page.id)}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors ${
-                  page.active
-                    ? "bg-surface-container-high text-on-surface font-semibold"
-                    : "hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px] text-primary">
-                    {page.active ? "check_small" : "article"}
-                  </span>
-                  <span className="font-label-md text-label-md">{page.name}</span>
-                </div>
-                {page.badge ? (
-                  <span className="font-code-sm text-[11px] text-secondary bg-surface-container px-1.5 py-0.5 rounded">
-                    {page.badge}
-                  </span>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
 
       {/* Active Collaborators / Members Popover */}
       {membersOpen ? (

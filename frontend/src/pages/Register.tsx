@@ -94,45 +94,45 @@ const Register = () => {
   };
 
   return (
-    <main className="w-full min-h-screen flex-1 flex flex-col justify-center items-center px-4 py-10 bg-background selection:bg-primary selection:text-on-primary relative overflow-hidden">
-      <div className="flex flex-col w-full relative min-h-[840px] items-center justify-center">
+    <main className="w-full h-screen h-[100dvh] max-h-screen flex flex-col justify-center items-center px-4 py-2 bg-background selection:bg-primary selection:text-on-primary relative overflow-hidden">
+      <div className="flex flex-col w-full h-full max-h-screen relative items-center justify-center">
         {/* Ambient floating geometric vectors */}
         <AmbientVectors />
 
         {/* STATIONARY AUTHENTICATION CARD */}
-        <div className="relative z-10 w-full max-w-[440px] -translate-y-4 sm:-translate-y-8 transition-none">
-          <div className="bg-surface-container-lowest rounded-xl p-[36px] shadow-[0_8px_32px_-8px_rgba(25,27,34,0.06),0_1px_3px_0_rgba(25,27,34,0.04)] outline outline-1 outline-surface-container-highest">
+        <div className="relative z-10 w-full max-w-[420px] transition-none my-auto">
+          <div className="bg-surface-container-lowest rounded-xl p-5 sm:p-7 shadow-[0_8px_32px_-8px_rgba(25,27,34,0.06),0_1px_3px_0_rgba(25,27,34,0.04)] outline outline-1 outline-surface-container-highest">
             {/* Card Brand Block */}
             <div className="flex flex-col items-center justify-center text-center">
               {/* Nexus Geometric Mark */}
-              <div className="w-11 h-11 flex items-center justify-center text-primary mb-3.5">
-                <NexusMark size={44} />
+              <div className="w-8 h-8 flex items-center justify-center text-primary mb-1.5">
+                <NexusMark size={32} />
               </div>
 
               {/* Wordmark */}
-              <span className="font-headline-md text-headline-md tracking-tight text-on-surface lowercase leading-none mb-6">
+              <span className="font-headline-sm text-sm tracking-tight text-on-surface lowercase leading-none mb-2">
                 nexus
               </span>
 
               {/* Heading */}
-              <h1 className="font-display-editorial text-[30px] leading-[38px] text-on-surface font-normal tracking-tight mb-2.5">
+              <h1 className="font-display-editorial text-xl sm:text-[24px] leading-tight text-on-surface font-normal tracking-tight mb-1">
                 Create your account
               </h1>
 
               {/* Supporting text */}
-              <p className="font-body-md text-body-md text-secondary leading-relaxed max-w-[340px]">
+              <p className="font-body-sm text-xs text-secondary leading-normal max-w-[320px]">
                 Join your team on collaborative boards and infinite whiteboards
               </p>
             </div>
 
-            {apiError ? <Toast variant="error" message={apiError} className="mt-4" /> : null}
+            {apiError ? <Toast variant="error" message={apiError} className="mt-2" /> : null}
 
             {/* Form */}
-            <form className="mt-8 flex flex-col space-y-4" onSubmit={handleSubmit} noValidate>
+            <form className="mt-4 flex flex-col space-y-2.5" onSubmit={handleSubmit} noValidate>
               {/* Name Field */}
-              <div className="flex flex-col space-y-1.5 text-left">
+              <div className="flex flex-col space-y-1 text-left">
                 <label
-                  className="font-label-md text-label-md text-on-surface font-medium"
+                  className="font-label-md text-xs text-on-surface font-medium"
                   htmlFor="full-name"
                 >
                   Full name
@@ -148,7 +148,7 @@ const Register = () => {
                     disabled={isSubmitting}
                     value={form.name}
                     onChange={(event) => updateField("name", event.target.value)}
-                    className={`w-full h-12 rounded-lg bg-surface-container-lowest px-4 text-on-surface text-body-sm font-body-sm placeholder:text-outline-variant outline outline-1 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${
+                    className={`w-full h-10 rounded-lg bg-surface-container-lowest px-3.5 text-on-surface text-body-sm font-body-sm placeholder:text-outline-variant outline outline-1 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${
                       fieldErrors.name
                         ? "outline-error ring-1 ring-error"
                         : "outline-surface-container-highest"
@@ -156,16 +156,16 @@ const Register = () => {
                   />
                 </div>
                 {fieldErrors.name ? (
-                  <p className="mt-1 font-body-sm text-xs font-medium text-error" role="alert">
+                  <p className="mt-0.5 font-body-sm text-[11px] font-medium text-error" role="alert">
                     {fieldErrors.name}
                   </p>
                 ) : null}
               </div>
 
               {/* Email Field */}
-              <div className="flex flex-col space-y-1.5 text-left">
+              <div className="flex flex-col space-y-1 text-left">
                 <label
-                  className="font-label-md text-label-md text-on-surface font-medium"
+                  className="font-label-md text-xs text-on-surface font-medium"
                   htmlFor="work-email"
                 >
                   Work email
@@ -181,7 +181,7 @@ const Register = () => {
                     disabled={isSubmitting}
                     value={form.email}
                     onChange={(event) => updateField("email", event.target.value)}
-                    className={`w-full h-12 rounded-lg bg-surface-container-lowest px-4 text-on-surface text-body-sm font-body-sm placeholder:text-outline-variant outline outline-1 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${
+                    className={`w-full h-10 rounded-lg bg-surface-container-lowest px-3.5 text-on-surface text-body-sm font-body-sm placeholder:text-outline-variant outline outline-1 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${
                       fieldErrors.email
                         ? "outline-error ring-1 ring-error"
                         : "outline-surface-container-highest"
@@ -189,17 +189,17 @@ const Register = () => {
                   />
                 </div>
                 {fieldErrors.email ? (
-                  <p className="mt-1 font-body-sm text-xs font-medium text-error" role="alert">
+                  <p className="mt-0.5 font-body-sm text-[11px] font-medium text-error" role="alert">
                     {fieldErrors.email}
                   </p>
                 ) : null}
               </div>
 
               {/* Password Field */}
-              <div className="flex flex-col space-y-1.5 text-left">
+              <div className="flex flex-col space-y-1 text-left">
                 <div className="flex items-center justify-between">
                   <label
-                    className="font-label-md text-label-md text-on-surface font-medium"
+                    className="font-label-md text-xs text-on-surface font-medium"
                     htmlFor="password"
                   >
                     Password
@@ -223,7 +223,7 @@ const Register = () => {
                     disabled={isSubmitting}
                     value={form.password}
                     onChange={(event) => updateField("password", event.target.value)}
-                    className={`w-full h-12 rounded-lg bg-surface-container-lowest pl-4 pr-11 text-on-surface text-body-sm font-body-sm placeholder:text-outline-variant outline outline-1 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${
+                    className={`w-full h-10 rounded-lg bg-surface-container-lowest pl-3.5 pr-10 text-on-surface text-body-sm font-body-sm placeholder:text-outline-variant outline outline-1 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-lowest ${
                       fieldErrors.password
                         ? "outline-error ring-1 ring-error"
                         : "outline-surface-container-highest"
@@ -233,28 +233,28 @@ const Register = () => {
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     aria-label="Toggle password visibility"
-                    className="absolute right-3.5 text-secondary hover:text-on-surface transition-colors p-1 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary rounded"
+                    className="absolute right-3 text-secondary hover:text-on-surface transition-colors p-1 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary rounded"
                   >
-                    <span className="material-symbols-outlined text-[19px]">
+                    <span className="material-symbols-outlined text-[18px]">
                       {showPassword ? "visibility_off" : "visibility"}
                     </span>
                   </button>
                 </div>
                 {fieldErrors.password ? (
-                  <p className="mt-1 font-body-sm text-xs font-medium text-error" role="alert">
+                  <p className="mt-0.5 font-body-sm text-[11px] font-medium text-error" role="alert">
                     {fieldErrors.password}
                   </p>
                 ) : null}
               </div>
 
               {/* Primary Action Button */}
-              <div className="pt-2">
+              <div className="pt-1">
                 <Button
                   type="submit"
                   variant="primary"
-                  size="lg"
+                  size="md"
                   isLoading={isSubmitting}
-                  className="w-full h-12 rounded-lg font-label-md text-label-md font-medium tracking-tight"
+                  className="w-full h-10.5 rounded-lg font-label-md text-label-md font-medium tracking-tight"
                   rightIcon={
                     <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                   }
@@ -265,9 +265,9 @@ const Register = () => {
             </form>
 
             {/* Bottom editorial divider detail */}
-            <div className="mt-8 pt-5 flex items-center justify-center gap-2 border-t border-surface-container-high/60">
+            <div className="mt-4 pt-3 flex items-center justify-center gap-2 border-t border-surface-container-high/60">
               <span className="w-1.5 h-1.5 rounded-full bg-outline-variant" />
-              <span className="font-code-sm text-code-sm text-secondary">
+              <span className="font-code-sm text-[11px] text-secondary">
                 nexus strategic workspace
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-outline-variant" />
