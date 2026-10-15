@@ -331,12 +331,33 @@ const AppLayout = () => {
 
           {logoutError ? <Toast variant="error" message={logoutError} className="mb-1" /> : null}
 
-          <div className="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-high transition-colors group">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 text-on-primary font-bold text-xs">
+          {sidebarCollapsed ? (
+            <div className="flex flex-col items-center gap-2 py-1">
+              <div className="w-6 h-px bg-outline-variant my-0.5" />
+              <div
+                title={`${user?.name || "User"} (${user?.email || ""})`}
+                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 text-on-primary font-bold text-xs shadow-sm cursor-default"
+              >
                 {getInitials(user?.name || user?.email)}
               </div>
-              {!sidebarCollapsed ? (
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                title="Sign out"
+                aria-label="Sign out"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-error hover:bg-surface-container-high transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">logout</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-high transition-colors group">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 text-on-primary font-bold text-xs">
+                  {getInitials(user?.name || user?.email)}
+                </div>
                 <div className="flex flex-col min-w-0">
                   <span className="font-label-md text-label-md text-on-surface truncate">
                     {user?.name || "Alex Chen"}
@@ -345,20 +366,20 @@ const AppLayout = () => {
                     {user?.email || "alex@nexus.work"}
                   </span>
                 </div>
-              ) : null}
-            </div>
+              </div>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              title="Sign out"
-              aria-label="Sign out"
-              className="text-outline group-hover:text-error hover:scale-105 p-1 rounded transition-all"
-            >
-              <span className="material-symbols-outlined text-[18px]">logout</span>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                title="Sign out"
+                aria-label="Sign out"
+                className="text-outline group-hover:text-error hover:scale-105 p-1 rounded transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">logout</span>
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 

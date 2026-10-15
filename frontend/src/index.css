@@ -141,6 +141,38 @@ html.dark,
 
 ::view-transition-new(root) {
   z-index: 99999;
+  filter: drop-shadow(0 0 28px rgba(74, 124, 251, 0.45));
+}
+
+/* Tldraw Dark Mode Canvas & UI Integration */
+html.dark .tl-container,
+html.dark .tl-theme__dark,
+html.dark .tl-theme__light,
+html.dark .tldraw__editor {
+  --tl-color-background: #0e0f14 !important;
+  --tl-color-panel: #13141b !important;
+  --tl-color-low: #171822 !important;
+  --tl-color-low-border: #282a39 !important;
+  --tl-color-divider: #282a39 !important;
+  --tl-color-text: #f2f2fa !important;
+  --tl-color-text-0: #f2f2fa !important;
+  --tl-color-text-1: #c4c6d8 !important;
+  --tl-color-text-3: #9ea1b5 !important;
+  --tl-color-text-shadow: #0e0f14 !important;
+  --tl-color-grid: #282a39 !important;
+  background-color: #0e0f14 !important;
+}
+
+html.dark .tl-background {
+  background-color: #0e0f14 !important;
+}
+
+html.dark .tl-canvas {
+  background-color: #0e0f14 !important;
+}
+
+html.dark .tldraw__editor {
+  background-color: #0e0f14 !important;
 }
 
 @layer base {

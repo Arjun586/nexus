@@ -69,7 +69,7 @@ const runFallbackThemeSpread = (
   overlay.style.pointerEvents = "none";
   overlay.style.backgroundColor = nextTheme === "dark" ? "#0e0f14" : "#faf8ff";
   overlay.style.clipPath = `circle(0px at ${x}px ${y}px)`;
-  overlay.style.transition = "clip-path 650ms cubic-bezier(0.22, 1, 0.36, 1)";
+  overlay.style.transition = "clip-path 950ms cubic-bezier(0.4, 0, 0.1, 1)";
   document.body.appendChild(overlay);
 
   requestAnimationFrame(() => {
@@ -80,12 +80,12 @@ const runFallbackThemeSpread = (
     applyThemeToDom(nextTheme);
     localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
     notifyListeners(nextTheme);
-    overlay.style.transition = "opacity 200ms ease-out";
+    overlay.style.transition = "opacity 250ms ease-out";
     overlay.style.opacity = "0";
     setTimeout(() => {
       overlay.remove();
-    }, 220);
-  }, 500);
+    }, 280);
+  }, 800);
 };
 
 let isTransitioning = false;
@@ -166,8 +166,8 @@ export const toggleThemeWithAnimation = (
           clipPath,
         },
         {
-          duration: 650,
-          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          duration: 950,
+          easing: "cubic-bezier(0.4, 0, 0.1, 1)",
           pseudoElement: "::view-transition-new(root)",
         },
       );

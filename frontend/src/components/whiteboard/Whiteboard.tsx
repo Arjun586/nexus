@@ -4,6 +4,7 @@ import "tldraw/tldraw.css";
 import * as Y from "yjs";
 
 import type { CollaborationState } from "../../collaboration/useCollaboration";
+import { useTheme } from "../../utils/theme";
 
 interface WhiteboardProps {
   collabState: CollaborationState | null;
@@ -12,6 +13,7 @@ interface WhiteboardProps {
 const TLDRAW_ORIGIN = Symbol("tldraw");
 
 const Whiteboard = ({ collabState }: WhiteboardProps) => {
+  const { isDark } = useTheme();
   const editorRef = useRef<Editor | null>(null);
 
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -19,6 +21,31 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
   const handleMount = useCallback((mountedEditor: Editor) => {
     editorRef.current = mountedEditor;
     setEditor(mountedEditor);
+
+    const dark = document.documentElement.classList.contains("dark");
+    try {
+      mountedEditor.user.updateUserPreferences({
+        colorScheme: dark ? "dark" : "light",
+      });
+    } catch {
+      // Safe fallback
+    }
+
+    try {
+      const container = mountedEditor.getContainer();
+      if (container) {
+        container.setAttribute("data-color-mode", dark ? "dark" : "light");
+        if (dark) {
+          container.classList.remove("tl-theme__light");
+          container.classList.add("tl-theme__dark");
+        } else {
+          container.classList.remove("tl-theme__dark");
+          container.classList.add("tl-theme__light");
+        }
+      }
+    } catch {
+      // Safe fallback
+    }
   }, []);
 
   // Synchronize tldraw dark mode with Nexus application theme
@@ -26,12 +53,26 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
     if (!editor) return;
 
     const syncColorMode = () => {
-      const isDark = document.documentElement.classList.contains("dark");
+      const currentDark = document.documentElement.classList.contains("dark");
       try {
-        if (typeof (editor.user as any)?.setColorMode === "function") {
-          (editor.user as any).setColorMode(isDark ? "dark" : "light");
-        } else if (typeof (editor.user as any)?.updateUserPreferences === "function") {
-          (editor.user as any).updateUserPreferences({ colorMode: isDark ? "dark" : "light" });
+        editor.user.updateUserPreferences({
+          colorScheme: currentDark ? "dark" : "light",
+        });
+      } catch {
+        // Safe fallback
+      }
+
+      try {
+        const container = editor.getContainer();
+        if (container) {
+          container.setAttribute("data-color-mode", currentDark ? "dark" : "light");
+          if (currentDark) {
+            container.classList.remove("tl-theme__light");
+            container.classList.add("tl-theme__dark");
+          } else {
+            container.classList.remove("tl-theme__dark");
+            container.classList.add("tl-theme__light");
+          }
         }
       } catch {
         // Safe fallback
@@ -41,7 +82,7 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
     syncColorMode();
     window.addEventListener("nexus-theme-change", syncColorMode);
     return () => window.removeEventListener("nexus-theme-change", syncColorMode);
-  }, [editor]);
+  }, [editor, isDark]);
 
   useEffect(() => {
     if (!editor || !collabState) {
@@ -146,8 +187,17 @@ const Whiteboard = ({ collabState }: WhiteboardProps) => {
   const licenseKey = import.meta.env.VITE_TLDRAW_LICENSE_KEY;
 
   return (
-    <div className="tldraw__editor relative h-full w-full">
-      <Tldraw licenseKey={licenseKey} onMount={handleMount} />
+    <div
+      className={`tldraw__editor relative h-full w-full ${
+        isDark ? "tl-theme__dark" : "tl-theme__light"
+      }`}
+    >
+      <Tldraw
+        licenseKey={licenseKey}
+        onMount={handleMount}
+        colorScheme={isDark ? "dark" : "light"}
+        className={isDark ? "tl-theme__dark" : "tl-theme__light"}
+      />
     </div>
   );
 };
