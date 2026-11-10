@@ -20,10 +20,13 @@ export type SafeUser = {
 export type LoginData = {
   user: SafeUser;
   accessToken: string;
+  expiresIn: number;
 };
 
 export type RefreshData = {
   accessToken: string;
+  user: SafeUser;
+  expiresIn: number;
 };
 
 export type RegisterResponse = {

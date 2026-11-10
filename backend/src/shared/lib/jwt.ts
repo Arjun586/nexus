@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import ms from "ms";
 import type { StringValue } from "ms";
 
 import { env } from "../../config/env.js";
@@ -29,12 +30,15 @@ const signToken = (
     expiresIn: string,
 ): string => {
     return jwt.sign(payload, secret, {
+        algorithm: "HS256",
         expiresIn: expiresIn as StringValue,
     });
 };
 
 const verifyToken = (token: string, secret: string): TokenPayload => {
-    const payload = jwt.verify(token, secret);
+    const payload = jwt.verify(token, secret, {
+        algorithms: ["HS256"],
+    });
 
     if (!isTokenPayload(payload)) {
         throw new Error("Invalid token payload");
@@ -48,6 +52,10 @@ const verifyToken = (token: string, secret: string): TokenPayload => {
 
 export const generateAccessToken = (payload: TokenPayload): string => {
     return signToken(payload, env.JWT_ACCESS_SECRET, env.JWT_ACCESS_EXPIRES_IN);
+};
+
+export const getAccessTokenTtlSeconds = (): number => {
+    return Math.floor(ms(env.JWT_ACCESS_EXPIRES_IN as StringValue) / 1000);
 };
 
 export const verifyAccessToken = (token: string): TokenPayload => {

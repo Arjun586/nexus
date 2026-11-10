@@ -1,60 +1,19 @@
-import { clearAccessToken, getAccessToken, setAccessToken } from "./access-token";
-import { clearUser, getUser, setUser } from "./user";
-import { refresh } from "../api/auth";
-import type { SafeUser } from "../types/auth";
-import { decodeAccessToken } from "../utils/decode-access-token";
+import { getAccessToken } from "./access-token";
+import { hasValidAccessToken, refreshSession } from "./session";
+import { getUser } from "./user";
 
-const userFromAccessToken = (token: string): SafeUser | null => {
-  const payload = decodeAccessToken(token);
-
-  if (!payload) {
-    return null;
-  }
-
-  return {
-    id: payload.userId,
-    email: payload.email,
-    name: "",
-    createdAt: "",
-    updatedAt: "",
-  };
-};
-
-export function clearSession(): void {
-  clearAccessToken();
-  clearUser();
-}
+export { clearSession } from "./session";
 
 export async function restoreSession(): Promise<boolean> {
-  const existingToken = getAccessToken();
-
-  if (existingToken) {
-    if (!getUser()) {
-      const user = userFromAccessToken(existingToken);
-
-      if (user) {
-        setUser(user);
-      }
-    }
-
-    return Boolean(getAccessToken() && getUser());
+  // On a soft reload the in-memory session may still be valid.
+  if (getAccessToken() && hasValidAccessToken()) {
+    return Boolean(getUser());
   }
 
-  try {
-    const response = await refresh();
-    const accessToken = response.data.accessToken;
-    const user = userFromAccessToken(accessToken);
+  // Otherwise exchange the httpOnly refresh cookie for a fresh session.
+  // `silent` keeps boot failures from dispatching the expiry event before
+  // the router mounts.
+  const accessToken = await refreshSession(true);
 
-    if (!user) {
-      clearSession();
-      return false;
-    }
-
-    setAccessToken(accessToken);
-    setUser(user);
-    return true;
-  } catch {
-    clearSession();
-    return false;
-  }
+  return Boolean(accessToken && getUser());
 }

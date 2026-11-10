@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as Y from "yjs";
 import { HocuspocusProvider } from "@hocuspocus/provider";
-import { getAccessToken } from "../session/access-token";
+import { getValidAccessToken, refreshSession } from "../session/session";
 
 export type ConnectionStatus = "connecting" | "connected" | "disconnected";
 
@@ -45,16 +45,28 @@ export function useCollaboration(
 
     const doc = new Y.Doc();
 
-    const accessToken = getAccessToken();
+    // Hocuspocus calls the token callback on every connect/reconnect, so a
+    // reconnect after the access token expires gets refreshed automatically.
+    let authFailures = 0;
 
     const provider = new HocuspocusProvider({
       url: HOCUSPOCUS_WS_URL,
       name: workspaceId,
       document: doc,
-      token: accessToken || "",
+      token: async () => (await getValidAccessToken()) ?? "",
 
       onConnect: () => {
+        authFailures = 0;
         setState({ doc, provider, status: "connected" });
+      },
+      onAuthenticationFailed: () => {
+        authFailures += 1;
+
+        // The cached token may have been rejected (e.g. server restarted or
+        // membership changed). Refresh it before the next reconnect attempt.
+        if (authFailures <= 2) {
+          void refreshSession();
+        }
       },
       onStatus: ({ status }) => {
         setState((prev) =>

@@ -7,7 +7,7 @@ import { deleteWorkspace, getWorkspaces } from "../api/workspace";
 import NexusMark from "../components/brand/NexusMark";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Toast from "../components/ui/Toast";
-import { clearSession } from "../session/restore-session";
+import { clearSession, SESSION_EXPIRED_EVENT } from "../session/session";
 import { getUser } from "../session/user";
 import { parseApiError } from "../utils/parse-api-error";
 import { useTheme } from "../utils/theme";
@@ -31,7 +31,6 @@ const AppLayout = () => {
   const [isLoadingWorkspaces, setIsLoadingWorkspaces] = useState(true);
   const [workspacesError, setWorkspacesError] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [logoutError, setLogoutError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Workspace | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -122,6 +121,20 @@ const AppLayout = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [toggleSidebar]);
 
+  // The refresh cookie can expire or be revoked while the app is open.
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      clearSession();
+      navigate("/login", { replace: true, state: { expired: true } });
+    };
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    };
+  }, [navigate]);
+
   const handleDeleteWorkspace = async () => {
     if (!deleteTarget || isDeleting) return;
 
@@ -145,17 +158,15 @@ const AppLayout = () => {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    setLogoutError(null);
 
     try {
       await logout();
-      clearSession();
-      navigate("/login");
-    } catch (error) {
-      const { message } = parseApiError(error);
-      setLogoutError(message);
+    } catch {
+      // Local sign-out must succeed even when the server call fails.
     } finally {
+      clearSession();
       setIsLoggingOut(false);
+      navigate("/login", { replace: true });
     }
   };
 
@@ -328,8 +339,6 @@ const AppLayout = () => {
               </button>
             </div>
           )}
-
-          {logoutError ? <Toast variant="error" message={logoutError} className="mb-1" /> : null}
 
           {sidebarCollapsed ? (
             <div className="flex flex-col items-center gap-2 py-1">

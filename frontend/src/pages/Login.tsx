@@ -6,8 +6,7 @@ import AmbientVectors from "../components/brand/AmbientVectors";
 import NexusMark from "../components/brand/NexusMark";
 import Button from "../components/ui/Button";
 import Toast from "../components/ui/Toast";
-import { setAccessToken } from "../session/access-token";
-import { setUser } from "../session/user";
+import { setSession } from "../session/session";
 import type { LoginInput } from "../types/auth";
 import { parseApiError } from "../utils/parse-api-error";
 
@@ -44,6 +43,9 @@ const Login = () => {
 
   const registeredSuccess = Boolean((location.state as { registered?: boolean })?.registered);
   const [showRegisteredToast, setShowRegisteredToast] = useState(registeredSuccess);
+
+  const sessionExpired = Boolean((location.state as { expired?: boolean })?.expired);
+  const [showExpiredToast, setShowExpiredToast] = useState(sessionExpired);
 
   const updateField = (field: LoginFields, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -82,8 +84,11 @@ const Login = () => {
         password: form.password,
       });
 
-      setAccessToken(response.data.accessToken);
-      setUser(response.data.user);
+      setSession({
+        accessToken: response.data.accessToken,
+        user: response.data.user,
+        expiresIn: response.data.expiresIn,
+      });
       navigate("/dashboard");
     } catch (error) {
       const { message, fieldErrors: serverFieldErrors } = parseApiError(error);
@@ -132,6 +137,17 @@ const Login = () => {
                 variant="success"
                 message="Account created successfully! Please sign in."
                 onClose={() => setShowRegisteredToast(false)}
+                autoDismiss={true}
+                duration={5000}
+                className="mt-3"
+              />
+            ) : null}
+
+            {showExpiredToast ? (
+              <Toast
+                variant="info"
+                message="Your session expired. Please sign in again."
+                onClose={() => setShowExpiredToast(false)}
                 autoDismiss={true}
                 duration={5000}
                 className="mt-3"

@@ -2,7 +2,6 @@ import type {
   LoginInput,
   LoginResponse,
   LogoutResponse,
-  RefreshResponse,
   RegisterInput,
   RegisterResponse,
 } from "../types/auth";
@@ -12,7 +11,6 @@ const AUTH_ENDPOINTS = {
   register: "/auth/register",
   login: "/auth/login",
   logout: "/auth/logout",
-  refresh: "/auth/refresh",
 } as const;
 
 export async function register(input: RegisterInput): Promise<RegisterResponse> {
@@ -33,12 +31,5 @@ export async function login(input: LoginInput): Promise<LoginResponse> {
 
 export async function logout(): Promise<LogoutResponse> {
   const { data } = await apiClient.post<LogoutResponse>(AUTH_ENDPOINTS.logout);
-  return data;
-}
-
-export async function refresh(): Promise<RefreshResponse> {
-  const { data } = await apiClient.post<RefreshResponse>(
-    AUTH_ENDPOINTS.refresh,
-  );
   return data;
 }

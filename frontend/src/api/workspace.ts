@@ -1,4 +1,3 @@
-import { getAccessToken } from "../session/access-token";
 import type {
   GetCollaboratorsResponse,
   InviteCollaboratorInput,
@@ -28,25 +27,12 @@ const workspaceById = (workspaceId: string) =>
 const workspaceSnapshotById = (workspaceId: string) =>
   `${workspaceById(workspaceId)}/snapshot`;
 
-const getAuthHeaders = () => {
-  const accessToken = getAccessToken();
-
-  return accessToken
-    ? {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    : undefined;
-};
-
 export async function createWorkspace(
   input: CreateWorkspaceInput,
 ): Promise<CreateWorkspaceResponse> {
   const { data } = await apiClient.post<CreateWorkspaceResponse>(
     WORKSPACE_ENDPOINTS.workspaces,
     input,
-    getAuthHeaders(),
   );
 
   return data;
@@ -55,7 +41,6 @@ export async function createWorkspace(
 export async function getWorkspaces(): Promise<GetWorkspacesResponse> {
   const { data } = await apiClient.get<GetWorkspacesResponse>(
     WORKSPACE_ENDPOINTS.workspaces,
-    getAuthHeaders(),
   );
 
   return data;
@@ -66,7 +51,6 @@ export async function getWorkspace(
 ): Promise<GetWorkspaceResponse> {
   const { data } = await apiClient.get<GetWorkspaceResponse>(
     workspaceById(workspaceId),
-    getAuthHeaders(),
   );
 
   return data;
@@ -77,7 +61,6 @@ export async function getWorkspaceSnapshot(
 ): Promise<GetWorkspaceSnapshotResponse> {
   const { data } = await apiClient.get<GetWorkspaceSnapshotResponse>(
     workspaceSnapshotById(workspaceId),
-    getAuthHeaders(),
   );
 
   return data;
@@ -90,7 +73,6 @@ export async function saveWorkspaceSnapshot(
   const { data } = await apiClient.put<SaveWorkspaceSnapshotResponse>(
     workspaceSnapshotById(workspaceId),
     { snapshot },
-    getAuthHeaders(),
   );
 
   return data;
@@ -103,7 +85,6 @@ export async function renameWorkspace(
   const { data } = await apiClient.patch<RenameWorkspaceResponse>(
     workspaceById(workspaceId),
     input,
-    getAuthHeaders(),
   );
 
   return data;
@@ -114,7 +95,6 @@ export async function deleteWorkspace(
 ): Promise<DeleteWorkspaceResponse> {
   const { data } = await apiClient.delete<DeleteWorkspaceResponse>(
     workspaceById(workspaceId),
-    getAuthHeaders(),
   );
 
   return data;
@@ -125,7 +105,6 @@ export async function getCollaborators(
 ): Promise<GetCollaboratorsResponse> {
   const { data } = await apiClient.get<GetCollaboratorsResponse>(
     `${workspaceById(workspaceId)}/members`,
-    getAuthHeaders(),
   );
 
   return data;
@@ -138,7 +117,6 @@ export async function inviteCollaborator(
   const { data } = await apiClient.post<InviteCollaboratorResponse>(
     `${workspaceById(workspaceId)}/members`,
     input,
-    getAuthHeaders(),
   );
 
   return data;

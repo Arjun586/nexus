@@ -2,7 +2,7 @@ import argon2 from "argon2";
 
 import { ApiError } from "../../shared/errors/api-error.js";
 import { env } from "../../config/env.js";
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "../../shared/lib/jwt.js";
+import { generateAccessToken, generateRefreshToken, getAccessTokenTtlSeconds, verifyRefreshToken } from "../../shared/lib/jwt.js";
 import { hashRefreshToken } from "../../shared/lib/refresh-token.js";
 import { authRepository } from "./auth.repository.js";
 import type { RegisterInput, LoginInput, LoginResult, RefreshResult, SafeUser } from "./auth.types.js";
@@ -47,6 +47,16 @@ const register = async (input: RegisterInput): Promise<SafeUser> => {
     return toSafeUser(user);
 };
 
+const me = async (userId: string): Promise<SafeUser> => {
+    const user = await authRepository.findUserById(userId);
+
+    if (!user) {
+        throw new ApiError(401, "User no longer exists");
+    }
+
+    return user;
+};
+
 const login = async (input: LoginInput): Promise<LoginResult> => {
     const user = await authRepository.findUserByEmail(input.email);
 
@@ -78,6 +88,7 @@ const login = async (input: LoginInput): Promise<LoginResult> => {
         user: safeUser,
         accessToken,
         refreshToken,
+        expiresIn: getAccessTokenTtlSeconds(),
     };
 };
 
@@ -107,7 +118,17 @@ const refresh = async (refreshToken: string): Promise<RefreshResult> => {
         email: payload.email,
     });
 
-    return { accessToken };
+    const user = await authRepository.findUserById(payload.userId);
+
+    if (!user) {
+        throw new ApiError(401, "User no longer exists");
+    }
+
+    return {
+        accessToken,
+        user,
+        expiresIn: getAccessTokenTtlSeconds(),
+    };
 };
 
 const logout = async (refreshToken: string): Promise<void> => {
@@ -116,14 +137,14 @@ const logout = async (refreshToken: string): Promise<void> => {
     try {
         payload = verifyRefreshToken(refreshToken);
     } catch {
-        throw new ApiError(401, "Invalid refresh token");
+        return;
     }
 
     const tokenHash = hashRefreshToken(refreshToken);
     const storedToken = await authRepository.findRefreshToken(tokenHash);
 
     if (!storedToken || storedToken.userId !== payload.userId) {
-        throw new ApiError(401, "Invalid refresh token");
+        return;
     }
 
     if (storedToken.revokedAt === null) {
@@ -133,6 +154,7 @@ const logout = async (refreshToken: string): Promise<void> => {
 
 export const authService = {
     register,
+    me,
     login,
     refresh,
     logout,

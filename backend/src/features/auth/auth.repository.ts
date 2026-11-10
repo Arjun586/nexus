@@ -2,9 +2,26 @@ import type { Prisma, RefreshToken, User } from "@prisma/client";
 
 import { prisma } from "../../shared/lib/prisma.js";
 
+const safeUserSelect = {
+    id: true,
+    name: true,
+    email: true,
+    createdAt: true,
+    updatedAt: true,
+} satisfies Prisma.UserSelect;
+
 const findUserByEmail = async (email: string): Promise<User | null> => {
     return prisma.user.findUnique({
         where: { email },
+    });
+};
+
+const findUserById = async (
+    id: string,
+): Promise<Prisma.UserGetPayload<{ select: typeof safeUserSelect }> | null> => {
+    return prisma.user.findUnique({
+        where: { id },
+        select: safeUserSelect,
     });
 };
 
@@ -37,6 +54,7 @@ const revokeRefreshToken = async (id: string): Promise<RefreshToken> => {
 
 export const authRepository = {
     findUserByEmail,
+    findUserById,
     createUser,
     createRefreshToken,
     findRefreshToken,

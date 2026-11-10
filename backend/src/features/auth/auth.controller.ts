@@ -14,6 +14,19 @@ const register = asyncHandler(async (req: Request, res: Response): Promise<void>
     });
 });
 
+const me = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const user = await authService.me(req.user.userId);
+
+    res.status(200).json({
+        success: true,
+        data: user,
+    });
+});
+
 const login = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { refreshToken, ...data } = await authService.login(req.body);
 
@@ -44,11 +57,9 @@ const refresh = asyncHandler(async (req: Request, res: Response): Promise<void> 
 const logout = asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const refreshToken = req.cookies[REFRESH_TOKEN_COOKIE_NAME];
 
-    if (!refreshToken || typeof refreshToken !== "string") {
-        throw new ApiError(401, "Invalid refresh token");
+    if (refreshToken && typeof refreshToken === "string") {
+        await authService.logout(refreshToken);
     }
-
-    await authService.logout(refreshToken);
 
     res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, getRefreshTokenClearCookieOptions());
 
@@ -60,6 +71,7 @@ const logout = asyncHandler(async (req: Request, res: Response): Promise<void> =
 
 export const authController = {
     register,
+    me,
     login,
     refresh,
     logout,

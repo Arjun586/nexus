@@ -18,8 +18,11 @@ export type LoginResult = {
     user: SafeUser;
     accessToken: string;
     refreshToken: string;
+    expiresIn: number;
 };
 
 export type RefreshResult = {
     accessToken: string;
+    user: SafeUser;
+    expiresIn: number;
 };
