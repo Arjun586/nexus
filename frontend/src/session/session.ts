@@ -20,10 +20,13 @@ const TOKEN_EXPIRY_GRACE_MS = 5_000;
 
 const MIN_REFRESH_DELAY_MS = 1_000;
 
+/** Default 15 minutes in seconds when backend does not send expiresIn */
+const DEFAULT_ACCESS_TOKEN_LIFETIME_SEC = 15 * 60;
+
 type SessionInput = {
   accessToken: string;
-  user: SafeUser;
-  expiresIn: number;
+  user?: SafeUser | null;
+  expiresIn?: number;
 };
 
 let expiresAt = 0;
@@ -46,19 +49,50 @@ const cancelRefreshTimer = (): void => {
   }
 };
 
-const getRefreshDelayMs = (expiresIn: number): number => {
-  const lifetimeMs = Math.max(expiresIn, 0) * 1000;
+const sanitizeExpiresIn = (expiresIn?: number): number => {
+  if (typeof expiresIn === "number" && Number.isFinite(expiresIn) && expiresIn > 0) {
+    return expiresIn;
+  }
+  return DEFAULT_ACCESS_TOKEN_LIFETIME_SEC;
+};
+
+const getRefreshDelayMs = (expiresIn?: number): number => {
+  const safeSeconds = sanitizeExpiresIn(expiresIn);
+  const lifetimeMs = safeSeconds * 1000;
   const leeway = Math.min(MAX_REFRESH_LEEWAY_MS, lifetimeMs * 0.2);
   return Math.max(lifetimeMs - leeway, MIN_REFRESH_DELAY_MS);
 };
 
-const scheduleRefresh = (expiresIn: number): void => {
+const scheduleRefresh = (expiresIn?: number): void => {
   cancelRefreshTimer();
 
+  const delayMs = getRefreshDelayMs(expiresIn);
   refreshTimer = window.setTimeout(() => {
     refreshTimer = null;
     void refreshSession();
-  }, getRefreshDelayMs(expiresIn));
+  }, delayMs);
+};
+
+const getUserFromTokenFallback = (token: string): SafeUser | null => {
+  try {
+    const segment = token.split(".")[1];
+    if (!segment) return null;
+    const payload = JSON.parse(
+      atob(segment.replace(/-/g, "+").replace(/_/g, "/")),
+    );
+    if (typeof payload?.userId === "string") {
+      return {
+        id: payload.userId,
+        email: payload.email || "",
+        name: payload.name || payload.email?.split("@")[0] || "User",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
 };
 
 export const setSession = ({
@@ -67,10 +101,20 @@ export const setSession = ({
   expiresIn,
 }: SessionInput): void => {
   sessionGeneration += 1;
+  const safeExpiresIn = sanitizeExpiresIn(expiresIn);
   setAccessToken(accessToken);
-  setUser(user);
-  expiresAt = Date.now() + expiresIn * 1000;
-  scheduleRefresh(expiresIn);
+
+  if (user) {
+    setUser(user);
+  } else if (!getUser()) {
+    const fallbackUser = getUserFromTokenFallback(accessToken);
+    if (fallbackUser) {
+      setUser(fallbackUser);
+    }
+  }
+
+  expiresAt = Date.now() + safeExpiresIn * 1000;
+  scheduleRefresh(safeExpiresIn);
 };
 
 export const clearSession = (): void => {
@@ -90,8 +134,7 @@ export const hasValidAccessToken = (): boolean => {
  * Refreshes the access token using the httpOnly refresh-token cookie.
  *
  * Concurrent callers share a single in-flight request. On failure the local
- * session is cleared and `SESSION_EXPIRED_EVENT` is dispatched unless the
- * caller asked for a silent attempt (used during boot).
+ * session is cleared only on explicit 401/403 authorization rejections.
  */
 export const refreshSession = (silent = false): Promise<string | null> => {
   if (refreshPromise) {
@@ -116,17 +159,33 @@ export const refreshSession = (silent = false): Promise<string | null> => {
         return getAccessToken();
       }
 
-      const { accessToken, user, expiresIn } = response.data.data;
+      const rawData = response.data?.data;
+      const accessToken = rawData?.accessToken;
+      const user = rawData?.user;
+      const expiresIn = rawData?.expiresIn;
+
+      if (!accessToken) {
+        throw new Error("Missing access token in refresh response");
+      }
 
       setSession({ accessToken, user, expiresIn });
 
       return accessToken;
-    } catch {
-      if (generation === sessionGeneration) {
-        clearSession();
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const isAuthRejection = status === 401 || status === 403;
 
-        if (!silent) {
-          emitSessionExpired();
+      if (generation === sessionGeneration) {
+        if (isAuthRejection) {
+          clearSession();
+
+          if (!silent) {
+            emitSessionExpired();
+          }
+        } else if (status === 429) {
+          // If rate limited, back off and retry after cooldown rather than looping or logging out
+          console.warn("Refresh rate limited (429). Will retry after cooldown.");
+          scheduleRefresh(60);
         }
       }
 

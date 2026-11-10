@@ -26,7 +26,7 @@ export const loginLimiter = createRateLimiter({
 
 export const refreshLimiter = createRateLimiter({
     windowMs: 15 * 60 * 1000,
-    max: 30,
+    max: 100,
 });
 
 export const apiLimiter = createRateLimiter({
